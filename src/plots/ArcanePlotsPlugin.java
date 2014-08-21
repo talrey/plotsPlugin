@@ -136,10 +136,10 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 								sender.sendMessage(Msg.PREFIX + Msg.STAT_SEL_ACTIVE);
 								return true;
 							}
-							//IMPL should re-sending the command reset, or should it cancel instead?
+							// IMPL should re-sending the command reset, or should it cancel instead?
 							playerSelections.put(name,null);
 							sender.sendMessage(Msg.PREFIX + Msg.STAT_SEL_RESET);
-							//OR
+							// OR
 							//player.Selections.remove(name);
 							//sender.sendMessage(Msg.PREFIX + Msg.STAT_SEL_CANCEL);
 							return true;
@@ -328,7 +328,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 					sender.sendMessage(Msg.PREFIX + Msg.ERR_ARGS_INVALID);
 					return true;
 				}
-				else //IMPL no argument given, assuming *this* plot
+				else // IMPL no argument given, assuming *this* plot
 				{
 					for (Plot plot : plotSet)
 					{
@@ -359,7 +359,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 							sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
 							return true;
 						}
-						else {} //continue checking
+						else {} // continue checking
 					}
 					sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOT);
 					return true;
@@ -389,7 +389,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 					sender.sendMessage(Msg.PREFIX + Msg.ERR_ARGS_INVALID);
 					return false;
 				}
-				//IMPL else there's no arg and we assume they mean toggle.
+				// IMPL else there's no arg and we assume they mean toggle.
 				for (Plot plot : plotSet)
 				{
 					if (plot.contains(pl.getLocation()) && (plot.permitsPlayer(pl.getUniqueId())) )
@@ -583,7 +583,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 					{
 						if (plot.permitsPlayer(e.getPlayer().getUniqueId()) )
 						{
-							//carry on, citizen.
+							// carry on, citizen.
 							return;
 						}
 						else e.setCancelled(true);
@@ -605,7 +605,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 					{
 						if (plot.permitsPlayer(e.getPlayer().getUniqueId()) )
 						{
-							//nothing to see here.
+							// nothing to see here.
 							return;
 						}
 						else e.setCancelled(true);
