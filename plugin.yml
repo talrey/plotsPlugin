@@ -1,0 +1,21 @@
+name: ArcanePlotsPlugin
+version: RC.1 for 1.7.10
+author: Morios
+description: Protects blocks from being removed / placed in an area.
+
+main: plots.ArcanePlotsPlugin
+
+commands:
+  plot:
+    description: Commands to manipulate a plot.
+    usage: /plot [flag] [arguments]
+    #permissions for this are handled by the below, and in the code.
+    
+# IMPL I don't actually know much about permissions, or how Arcane handles them.
+# Basically, I need to ask what kind of things should be blocked / permitted :P
+
+permissions:
+  arcanePlotsPlugin.console:
+    description: This allows use of the 'list all' and 'unset all' commands.
+    default: false
+
