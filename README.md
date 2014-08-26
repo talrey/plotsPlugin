@@ -11,6 +11,4 @@ Notes:
 - Plot data is saved to "plots.ser" in the main server folder. This is serialized object data created by Java, and may not be human-readable.
 - Currently saves on reload or server stop. I may add timed saves in at a later date.
 - This version is definitely still a beta. It works, but may not be suitable for 'production' release.
-- Next steps:
-> config file
-> integration with credits
+- Next steps: config file and integration with credits
