@@ -1,21 +1,58 @@
 name: ArcanePlotsPlugin
-version: RC.1 for 1.7.10
+version: RC.2 for 1.7.10
 author: Morios
 description: Protects blocks from being removed / placed in an area.
 
 main: plots.ArcanePlotsPlugin
 
 commands:
-  plot:
-    description: Commands to manipulate a plot.
-    usage: /plot [flag] [arguments]
-    #permissions for this are handled by the below, and in the code.
+  plot set:
+    description: Creates a plot. Defaults to a radius of 10.
+    usage: "/plot set [radius #] / [corners]"
+    aliases: plot create
     
-# IMPL I don't actually know much about permissions, or how Arcane handles them.
-# Basically, I need to ask what kind of things should be blocked / permitted :P
+  plot unset:
+    description: Removes a plot.
+    usage: "/plot unset"
+    aliases: plot remove
+    
+  plot allow:
+    description: Gives a user editor rights for a plot.
+    usage: "/plot allow <player>"
+
+  plot unallow:
+    description: Takes a user's editor rights away for a plot.
+    usage: "/plot unallow <player>"
+    aliases: plot block
+  
+  plot list:
+    description: Lists the editors of a plot.
+    usage: "/plot list"
+    
+  plot edit:
+    description: Controls the state of a plot's protection.
+    usage: "/plot edit [on / off / blank (to toggle)]"
+    
+  plot confirm:
+    description: Confirm placing or removing a Plot.
+    usage: "/plot confirm"
+    aliases: confirm
+    
+  plot cancel:
+    description: Cancel placing or removing a Plot.
+    usage: "/plot cancel"
+    aliases: cancel
+    
+  plot:
+    description: Commands to manipulate a plot. Defaults to 'list'.
+    usage: /plot [option] [arguments]
 
 permissions:
   arcanePlotsPlugin.console:
     description: This allows use of the 'list all' and 'unset all' commands.
     default: false
+    
+  arcanePlotsPlugin.admin:
+    description: This allows use of plot commands without being on their edit list.
+    default: op
 

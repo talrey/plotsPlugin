@@ -2,7 +2,7 @@
  * Plot.java
  * Stores information about where a Plot is, and who can modify it.
  * @author Morios (Mark Talrey)
- * @version RC.1 for Minecraft 1.7.10
+ * @version RC.1.1 for Minecraft 1.7.10
  */
 
 package plots;
@@ -12,8 +12,9 @@ import java.awt.Rectangle;
 
 import java.io.Serializable;
 
-import java.util.ArrayList;
+//import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -22,18 +23,23 @@ import org.bukkit.OfflinePlayer;
 
 public final class Plot implements Serializable
 {
-	private static final long SerialVersionUID = 1710001L;
+	private static final long SerialVersionUID = 1710011L;
 	
 	private UUID world;
-	private ArrayList<UUID> allowedPlayers;
+	private HashMap<UUID, String> allowedPlayers;
 	private int x,z,w,l;
 	
+	protected static final UUID BLANK = new UUID(0L, 0L);
+	
 		
-	public Plot (UUID worldUID, Rectangle bounds, UUID player)
+	protected Plot (UUID worldUID, Rectangle bounds, UUID player)
 	{
 		world = worldUID;
-		allowedPlayers = new ArrayList<>();
-		allowedPlayers.add(player);
+		allowedPlayers = new HashMap<>();
+		
+		String plName = Bukkit.getPlayer(player).getName();
+		allowedPlayers.put(player, plName);
+		allowedPlayers.put(BLANK, "");
 		
 		x = (int)Math.floor(bounds.getLocation().getX());
 		z = (int)Math.floor(bounds.getLocation().getY());
@@ -41,16 +47,19 @@ public final class Plot implements Serializable
 		l = (int)Math.floor(bounds.getHeight());
 	}
 	
-	public Plot (Location locA, Location locB, UUID player)
+	protected Plot (Location locA, Location locB, UUID player)
 	{
 		this(locA.getWorld().getUID(), buildRect(locA,locB), player);
 	}
 	
-	public Plot (Location loc, int radius, UUID player)
+	protected Plot (Location loc, int radius, UUID player)
 	{
 		world = loc.getWorld().getUID();
-		allowedPlayers = new ArrayList<>();
-		allowedPlayers.add(player);
+		allowedPlayers = new HashMap<>();
+		
+		String plName = Bukkit.getPlayer(player).getName();
+		allowedPlayers.put(player, plName);
+		allowedPlayers.put(BLANK, "");
 		
 		x = (int)Math.floor(loc.getX()) - radius;
 		z = (int)Math.floor(loc.getZ()) - radius;
@@ -58,7 +67,7 @@ public final class Plot implements Serializable
 		l = 2*radius;
 	}
 	
-	public static Rectangle buildRect (Location locA, Location locB)
+	protected static Rectangle buildRect (Location locA, Location locB)
 	{
 		Point min = new Point(0, 0);
 		Point max = new Point(1, 1);
@@ -89,12 +98,12 @@ public final class Plot implements Serializable
 		);
 	}
 	
-	public Rectangle getBounds ()
+	protected Rectangle getBounds ()
 	{
 		return new Rectangle(x,z,w,l);
 	}
 	
-	public boolean contains (Location loc)
+	protected boolean contains (Location loc)
 	{
 		if (! (loc.getWorld().getUID().equals(world)) ) return false;
 		
@@ -106,7 +115,7 @@ public final class Plot implements Serializable
 		return false;
 	}
 	
-	public boolean intersects (Plot plot)
+	protected boolean intersects (Plot plot)
 	{
 		Rectangle me = new Rectangle(x,z,w,l);
 		Rectangle him = plot.getBounds();
@@ -116,59 +125,181 @@ public final class Plot implements Serializable
 		return false;
 	}
 	
-	public boolean permitsPlayer (UUID player)
+	protected String listCoords ()
 	{
-		for (int i=0; i<allowedPlayers.size(); i++)
+		return "("+x+", "+z+")-("+(x+w)+", "+(z+l)+")";
+	}
+	
+	protected UUID getPlayerID (String name)
+	{
+		Set<UUID> uuids = allowedPlayers.keySet();
+		
+		for (UUID id : uuids)
 		{
-			if (allowedPlayers.get(i).equals(player)) return true;
+			if (id == null) continue;
+			
+			if (allowedPlayers.get(id).contains(name)) // why contains(): one's a list of the queued names
+			{
+				return id;
+			}
+		}
+		return BLANK;
+	}
+	
+	protected boolean permitsPlayer (UUID player)
+	{
+		Set<UUID> uuids = allowedPlayers.keySet();
+		for (UUID id : uuids)
+		{
+			if (id == null) continue;
+			
+			if (id.equals(player))
+			{
+				String plName = Bukkit.getPlayer(player).getName();
+				
+				// this corrects the locally-stored player name if it's been changed.
+				if (! (allowedPlayers.get(id).equals(plName)) )
+				{
+					if (ArcanePlotsPlugin.WARN_NAME_MISMATCH)
+					{
+						Bukkit.getLogger().info(Msg.ERR_NAME_MISMATCH);
+					}
+					allowedPlayers.put(id, plName);
+				}
+				return true;
+			}
 		}
 		return false;
 	}
-
-	private int indexOfPlayer (UUID player)
+	
+	protected boolean permitsPlayer (String name) // this version's designed for queued names in null.
+	{
+		if (! (allowedPlayers.containsValue(name)) )
 		{
-		for (int i=0; i<allowedPlayers.size(); i++)
-		{
-			if (allowedPlayers.get(i).equals(player)) return i;
+			String[] queue = allowedPlayers.get(BLANK).split(";");
+			for (int i=0; i<queue.length; i++)
+			{
+				if (name == queue[i]) return true; // they're just waiting in line for their UUID still.
+			}
 		}
-		return -1;
+		return false;
 	}
 	
-	public void addPlayer (UUID player)
+	protected void addPlayer (UUID player)
 	{
-		for (int i=0; i<allowedPlayers.size(); i++)
+		Set<UUID> uuids = allowedPlayers.keySet();
+		for (UUID id : uuids)
 		{
-			if (allowedPlayers.get(i).equals(player)) return; // they're already on the list.
+			if (id == null) continue;
+			
+			if (id.equals(player))
+			{
+				String plName = Bukkit.getPlayer(player).getName();
+				if (plName == null) return;
+				
+				// this corrects the locally-stored player name if it's been changed.
+				if (! (allowedPlayers.get(id).equals(plName)) )
+				{
+					if (ArcanePlotsPlugin.WARN_NAME_MISMATCH)
+					{
+						Bukkit.getLogger().info(Msg.ERR_NAME_MISMATCH);
+					}
+					allowedPlayers.put(id, plName);
+				}
+				return; // they're already on the list.
+			}
 		}
-		allowedPlayers.add(player);
+		allowedPlayers.put(player, Bukkit.getPlayer(player).getName());
 	}
 	
-	public boolean removePlayer (UUID player)
+	protected void addPlayer (String name)
 	{
-		if (indexOfPlayer(player) > 0) //gotta keep somebody on the list! Also prevents Exceptions.
+		if (getPlayerID(name).equals(BLANK))
 		{
-			allowedPlayers.remove(indexOfPlayer(player));
+			if (allowedPlayers.get(BLANK).contains(name))
+			{
+				return; // already on the queue, buddy.
+			}
+			else
+			{
+				allowedPlayers.put(BLANK, allowedPlayers.get(BLANK).concat(name + ";"));
+			}
+		}
+		// funny, they're already here. Guess nothing more needs to be done.
+		return; // well, ALMOST nothing needs to be done.
+	}
+	
+	protected boolean removePlayer (UUID player)
+	{
+		if ( (allowedPlayers.size() > 2) || (allowedPlayers.get(BLANK) != "") )
+		// 2, because BLANK counts as an allowed player.
+		{
+			allowedPlayers.remove(player);
 			return true;
 		}
 		return false;
 	}
 	
-	public String listPlayers ()
+	protected boolean removePlayer (String name)
+	{
+		if (getPlayerID(name).equals(BLANK))
+		{
+			if (allowedPlayers.get(BLANK).contains(name)) // because getPlayerID fail-returns BLANK
+			{
+				String[] parts = allowedPlayers.get(BLANK).split(name + ";");
+				
+				if ( (parts == null) || (parts.length == 0) )
+				{
+					// the removed player is the only entry.
+					if (allowedPlayers.size() > 1)
+					{
+						allowedPlayers.put(BLANK, "");
+						return true;
+					}
+				}
+				if (parts[1] == null)
+				{
+					allowedPlayers.put(BLANK, parts[0]); // the removed player was the last entry.
+				}
+				else
+				{
+					allowedPlayers.put(BLANK, parts[0] + parts[1]);
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	protected String listPlayers ()
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append("("+x+", "+z+")-("+(x+w)+", "+(z+l)+"): ");
+		sb.append(listCoords() + ": ");
 		sb.append("Permitted editors: ");
-		for (int i=0; i<allowedPlayers.size(); i++)
+		
+		Set<UUID> uuids = allowedPlayers.keySet();
+		for (UUID id : uuids)
 		{
-			try
+			if (id == null)
 			{
-				OfflinePlayer op = Bukkit.getOfflinePlayer(allowedPlayers.get(i));
-				sb.append(op.getPlayer().getName());
-				sb.append(", ");
+				continue;
 			}
-			catch (NullPointerException npe)
+			else if (id.equals(BLANK))
 			{
-				//I doubt this will come up, but it's safe now.
+				if (allowedPlayers.get(BLANK) != "")
+				{
+					String[] queue = allowedPlayers.get(BLANK).split(";");
+					for (int i=0; i<queue.length; i++)
+					{
+						sb.append(queue[i]);
+						sb.append(", ");
+					}
+				}
+			}
+			else
+			{
+				sb.append(Bukkit.getPlayer(id).getName());
+				sb.append(", ");
 			}
 		}
 		sb.delete(sb.length()-2, sb.length()); //removes last comma
