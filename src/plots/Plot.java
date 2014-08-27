@@ -2,7 +2,7 @@
  * Plot.java
  * Stores information about where a Plot is, and who can modify it.
  * @author Morios (Mark Talrey)
- * @version RC.2 for Minecraft 1.7.10
+ * @version RC.2.1 for Minecraft 1.7.10
  */
 
 package plots;
@@ -75,26 +75,26 @@ public final class Plot implements Serializable
 		if (locA.getBlockX() < locB.getBlockX())
 		{
 			min.move(locA.getBlockX(), min.y);
-			max.move(locB.getBlockX(), max.y);
+			max.move(locB.getBlockX() + 1, max.y);
 		}
 		else
 		{
 			min.move(locB.getBlockX(), min.y);
-			max.move(locA.getBlockX(), max.y);
+			max.move(locA.getBlockX() + 1, max.y);
 		}
 		if (locA.getBlockZ() < locB.getBlockZ())
 		{
 			min.move(min.x, locA.getBlockZ());
-			max.move(max.x, locB.getBlockZ());
+			max.move(max.x, locB.getBlockZ() + 1);
 		}
 		else
 		{
 			min.move(min.x, locB.getBlockZ());
-			max.move(max.x, locA.getBlockZ());
+			max.move(max.x, locA.getBlockZ() + 1);
 		}
 		return new Rectangle(
 			(int)Math.floor(min.getX()), (int)Math.floor(min.getY()), 
-			(int)Math.floor(max.getX() - min.getX()), (int)Math.floor(max.getY() - min.getY())
+			(int)(max.getX() - min.getX()), (int)(max.getY() - min.getY())
 		);
 	}
 	
@@ -108,7 +108,7 @@ public final class Plot implements Serializable
 		if (! (loc.getWorld().getUID().equals(world)) ) return false;
 		
 		Rectangle bounds = new Rectangle(x,z,w,l);
-		if (bounds.contains(new Point((int)loc.getX(), (int)loc.getZ())) )
+		if (bounds.contains(new Point((int)Math.floor(loc.getX()), (int)Math.floor(loc.getZ()))) )
 		{
 			return true;
 		}
@@ -160,7 +160,7 @@ public final class Plot implements Serializable
 				// this corrects the locally-stored player name if it's been changed.
 				if (! (allowedPlayers.get(id).equals(plName)) )
 				{
-					if (ArcanePlotsPlugin.WARN_NAME_MISMATCH)
+					if ( ((ArcanePlotsPlugin)Bukkit.getPluginManager().getPlugin("ArcanePlotsPlugin")).shouldWarnMismatch() )
 					{
 						Bukkit.getLogger().info(Msg.ERR_NAME_MISMATCH);
 					}
@@ -200,7 +200,7 @@ public final class Plot implements Serializable
 				// this corrects the locally-stored player name if it's been changed.
 				if (! (allowedPlayers.get(id).equals(plName)) )
 				{
-					if (ArcanePlotsPlugin.WARN_NAME_MISMATCH)
+					if ( ((ArcanePlotsPlugin)Bukkit.getPluginManager().getPlugin("ArcanePlotsPlugin")).shouldWarnMismatch() )
 					{
 						Bukkit.getLogger().info(Msg.ERR_NAME_MISMATCH);
 					}
