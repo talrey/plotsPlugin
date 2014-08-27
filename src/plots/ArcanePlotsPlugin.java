@@ -4,7 +4,7 @@
  * ArcanePlotsPlugin.java
  * Land-protection plugin for the Arcane Survival server.
  * @author Morios (Mark Talrey)
- * @version RC.2 for Minecraft 1.7.10
+ * @version RC.2.1 for Minecraft 1.7.10
  */
 
 package plots;
@@ -38,14 +38,12 @@ import org.bukkit.event.player.PlayerInteractEvent;
 
 public final class ArcanePlotsPlugin extends JavaPlugin
 {
-	protected static boolean WARN_NAME_MISMATCH = true; // warns console if a player's name is changed.
-														// Plots store by UUID, so this can happen safely.
-	
-	private static final int DEFAULT_RADIUS = 10; // IMPL default radius for plot if no args are given.
-	private static final int MAX_RADIUS = 100; // don't want plots getting TOO huge, eh?
-	
-	private static final String FILEPATH = "./";
-	private static final String FILENAME = "plots.ser";
+	// keys for the config file
+	private static final String RADIUS_DEF = "radius.default";
+	private static final String RADIUS_MAX = "radius.maximum";
+	private static final String FILEPATH = "file.path";
+	private static final String FILENAME = "file.name";
+	private static final String WARN_MISMATCH = "warn_mismatch";
 	
 	// temporary data holders for Plot-building
 	private HashMap<String, Location> playerSelections = new HashMap<>();
@@ -137,6 +135,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				case "edit": return plotEdit(args, sender, plotSet, pl);
 				case "confirm": return plotConfirm(args, sender, plotSet, pl);
 				case "cancel": return plotCancel(args, sender, plotSet, pl);
+				case "test": return testFunction(args, sender, plotSet, pl);
 				//case "help": return plotHelp(args, sender, plotSet, pl);
 				
 				default: sender.sendMessage(Msg.PREFIX + Msg.ERR_ARG_INVALID);
@@ -145,11 +144,17 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		return false;
 	}
 	
+	private boolean testFunction (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
+	{
+		sender.sendMessage(this.getConfig().getString("file.path"));
+		return true;
+	}
+	
 	private boolean plotSet (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
 		if (args.length == 1)
 		{
-			Plot attempt = new Plot(pl.getLocation(), DEFAULT_RADIUS, pl.getUniqueId());
+			Plot attempt = new Plot(pl.getLocation(), getRadiusDef(), pl.getUniqueId());
 			for (Plot plot : plotSet)
 			{
 				if (plot.contains(pl.getLocation()))
@@ -208,7 +213,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				sender.sendMessage(Msg.PREFIX + Msg.ERR_RADIUS_NUM);
 				return true;
 			}
-			if ((rad <= 0) || (rad >= MAX_RADIUS))
+			if ((rad <= 0) || (rad >= getRadiusMax()) )
 			{
 				sender.sendMessage(Msg.PREFIX + Msg.ERR_RADIUS_SIZE);
 				return true;
@@ -556,7 +561,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	{
 		try
 		{
-			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILEPATH + FILENAME));
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(getDataFile()));
 			oos.writeObject(plotList);
 			oos.flush();
 			oos.close();
@@ -572,7 +577,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	{
 		try
 		{
-			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILEPATH + FILENAME));
+			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(getDataFile()));
 			plotList.putAll( (HashMap<Plot, Boolean>)ois.readObject());
 			ois.close();
 		}
@@ -596,7 +601,27 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		}
 		return false;
 	}
-		
+	
+	public int getRadiusDef ()
+	{
+		return this.getConfig().getInt(RADIUS_DEF);
+	}
+	
+	public int getRadiusMax ()
+	{
+		return this.getConfig().getInt(RADIUS_MAX);
+	}
+	
+	public String getDataFile ()
+	{
+		return (this.getConfig().getString(FILEPATH) + this.getConfig().getString(FILENAME) );
+	}
+	
+	public boolean shouldWarnMismatch ()
+	{
+		return this.getConfig().getBoolean(WARN_MISMATCH);
+	}
+	
 	@Override
 	public void onEnable ()
 	{
