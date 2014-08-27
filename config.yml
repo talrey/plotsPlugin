@@ -1,0 +1,14 @@
+# default config.yml for ArcanePlotsPlugin
+radius:
+  default: 10
+  maximum: 100
+  
+# where is the plot data saved?
+file:
+  path: "./"
+  name: "plots.ser"
+
+# should a Plot warn the console if a name mismatch is found,
+# that is, if a player's name has changed?
+# Note that mismatches are automatically solved either way.
+warn_mismatch: true
