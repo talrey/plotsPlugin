@@ -1,19 +1,20 @@
-//ctrl-F "IMPL" for implementation comments/questions I might have.
-
 /**
  * ArcanePlotsPlugin.java
  * Land-protection plugin for the Arcane Survival server.
  * @author Morios (Mark Talrey)
- * @version RC.2.1 for Minecraft 1.7.10
+ * @version RC.3.0 for Minecraft 1.7.10
  */
 
 package plots;
+
+//package com.arcaneminecraft.credits.CreditsPlugin;
 
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectOutputStream;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
@@ -44,6 +45,10 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	private static final String FILEPATH = "file.path";
 	private static final String FILENAME = "file.name";
 	private static final String WARN_MISMATCH = "warn_mismatch";
+	private static final String CREDIT_CPB = "credit.cpb";
+	private static final String CREDIT_RPB = "credit.rpb";
+	private static final String CREDIT_WEP = "credit.wep";
+	private static final String CREDIT_EPB = "credit.epb";
 	
 	// temporary data holders for Plot-building
 	private HashMap<String, Location> playerSelections = new HashMap<>();
@@ -52,93 +57,92 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	// the master list of all loaded plots
 	private HashMap<Plot, Boolean> plotList = new HashMap<>();
 	
+	//private CreditsPlugin creds = Bukkit.getPluginManager().getPlugin("CreditsPlugin");
+	
 	@Override
 	public boolean onCommand (CommandSender sender, Command cmd, String label, String[] args)
 	{
 		Set<Plot> plotSet = plotList.keySet();
 		
-		if (cmd.getName().equals("plot confirm"))
+		if (!(sender instanceof Player))
 		{
-			if (!(sender instanceof Player))
+			if ( (args.length == 2) && ((args[0]+" "+args[1]).equals("list all")) )
+			{
+				if (plotSet.isEmpty())
+				{
+					getLogger().info(Msg.ERR_NO_PLOTS);
+					return true;
+				}
+				getLogger().info(Msg.STAT_LISTALL);
+				for (Plot plot : plotSet)
+				{
+					getLogger().info(plot.listPlayers());
+				}
+				return true;
+			}
+			else
 			{
 				sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_PLAYER);
 				return true;
 			}
-			Player pl = (Player)sender;
-			return plotConfirm(args, sender, plotSet, pl);
 		}
-		else if (cmd.getName().equals("plot cancel"))
+		Player pl = (Player)sender;
+		
+		if (cmd.getName().equals("confirm"))
 		{
-			if (!(sender instanceof Player))
-			{
-				sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_PLAYER);
-				return true;
-			}
-			Player pl = (Player)sender;
-			return plotCancel(args, sender, plotSet, pl);
+			pl.performCommand("plot confirm");
+			return true;
+		}
+		else if (cmd.getName().equals("cancel"))
+		{
+			pl.performCommand("plot cancel");
+			return true;
 		}
 		else if (cmd.getName().equals("plot"))
-		{
-			if (!(sender instanceof Player))
+		{	
+			if (args.length == 0)
 			{
-				// "plot remove all" was deemed too dangerous, and has been removed.
-				/*
-				if ( (args.length == 2) && ((args[0]+" "+args[1]).equals("unset all")) )
-				{
-					if (plotSet.isEmpty())
-					{
-						getLogger().info(Msg.ERR_NO_PLOTS);
-						return true;
-					}
-					plotList.clear();
-					getLogger().info(Msg.DONE_PLOT_REMALL);
-					return true;
-				}
-				else */if ( (args.length == 2) && ((args[0]+" "+args[1]).equals("list all")) )
-				{
-					if (plotSet.isEmpty())
-					{
-						getLogger().info(Msg.ERR_NO_PLOTS);
-						return true;
-					}
-					getLogger().info(Msg.STAT_LISTALL);
-					for (Plot plot : plotSet)
-					{
-						getLogger().info(plot.listPlayers());
-					}
-					return true;
-				}
-				else
-				{
-					sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_PLAYER);
-					return true;
-				}
+				pl.performCommand("plot list");
+				return true;
 			}
-			Player pl = (Player)sender;
-			
-			if (args.length < 1) // default behavior goes in here
-			{
-				String[] temp = { "list" };
-				return plotList(temp, sender, plotSet, pl);
-			}
-				
 			switch (args[0])
 			{
-				case "create":
-				case "set": return plotSet(args, sender, plotSet, pl);
-				case "remove":
-				case "unset": return plotUnset(args, sender, plotSet, pl);
-				case "allow": return plotAllow(args, sender, plotSet, pl);
-				case "block":
-				case "unallow": return plotUnallow(args, sender, plotSet, pl);
+				case "buy": return plotSet(args, sender, plotSet, pl);
+				case "sell": return plotUnset(args, sender, plotSet, pl);
+				case "modify": return plotModify(args, sender, plotSet, pl);
 				case "list": return plotList(args, sender, plotSet, pl);
 				case "edit": return plotEdit(args, sender, plotSet, pl);
 				case "confirm": return plotConfirm(args, sender, plotSet, pl);
 				case "cancel": return plotCancel(args, sender, plotSet, pl);
-				case "test": return testFunction(args, sender, plotSet, pl);
-				//case "help": return plotHelp(args, sender, plotSet, pl);
-				
+	/*DEBUG*/	case "test": return testFunction(args, sender, plotSet, pl);
 				default: sender.sendMessage(Msg.PREFIX + Msg.ERR_ARG_INVALID);
+			}
+		}
+		else if (cmd.getName().equals("credits"))
+		{
+			if ( (args.length == 3) && (args[0].equals("give")) )
+			{
+				if (Bukkit.getPlayer(args[1]) == null)
+				{
+					// I need to find a workaround for this.
+					sender.sendMessage(Msg.PREFIX + "recieving player must be online!");
+					return true;
+				}
+				if (creditTrans(pl, Bukkit.getPlayer(args[1]), Integer.parseInt(args[2])) )
+				{
+					sender.sendMessage(Msg.PREFIX + Msg.DONE_CRED_SENT);
+					return true;
+				}
+				return false;
+			}
+			else if (args.length == 0)
+			{
+				sender.sendMessage(Msg.PREFIX + Msg.DONE_CRED_BAL + creditGet(pl) );
+			}
+			else
+			{
+				sender.sendMessage(Msg.PREFIX + Msg.ERR_ARGS_INVALID);
+				return false;
 			}
 		}
 		return false;
@@ -146,7 +150,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	
 	private boolean testFunction (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
-		sender.sendMessage(this.getConfig().getString("file.path"));
+		sender.sendMessage("Fun fact! The maximum area of a plot is ~" + (Integer.MAX_VALUE/getCPB()) );
 		return true;
 	}
 	
@@ -169,6 +173,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				}
 			}
 			tempPlots.put(pl.getUniqueId(), attempt);
+			sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_PRICE + (attempt.getArea()*getCPB()) );
 			sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_SET + attempt.listCoords());
 			return true;
 		}
@@ -186,10 +191,11 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 						sender.sendMessage(Msg.PREFIX + Msg.STAT_SEL_ACTIVE);
 						return true;
 					}
-					// IMPL should re-sending the command reset, or should it cancel instead?
+					// resets selection.
 					playerSelections.put(name,null);
 					sender.sendMessage(Msg.PREFIX + Msg.STAT_SEL_RESET);
 					// OR
+					// cancels selection.
 					//player.Selections.remove(name);
 					//sender.sendMessage(Msg.PREFIX + Msg.STAT_SEL_CANCEL);
 					return true;
@@ -235,6 +241,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				}
 			}
 			plotList.put(attempt, true);
+			sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_PRICE + (attempt.getArea()*getCPB()) );
 			sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_SET);
 			return true;
 		}
@@ -243,24 +250,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	
 	private boolean plotUnset (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
-		/* //removed because danger
-		if ( (args.length == 2) && (args[1].equals("all")) )
-		{
-			if (pl.hasPermission("arcanePlotsPlugin.console"))
-			{
-				if (plotList.isEmpty())
-				{
-					sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOTS);
-					return true;
-				}
-				sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_REMALL);
-				plotList.clear();
-				return true;
-			}
-			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PERM);
-			return true;
-		}
-		else */ if (args.length >= 2)
+		if (args.length >= 2)
 		{
 			sender.sendMessage(Msg.PREFIX + Msg.ERR_ARGS_INVALID);
 			return true;
@@ -276,6 +266,8 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 					return true;
 				}
 				tempPlots.put(pl.getUniqueId(), plot);
+				// put in a check for warranty time-out?
+				sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_PRICE + (plot.getArea()*getRPB()) );
 				sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_REM);
 				return true;
 			}
@@ -284,83 +276,84 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		return true;
 	}
 	
-	private boolean plotAllow (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
+	private boolean plotModify (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
-		if (args.length < 2)
+		if (args.length < 3)
 		{
 			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TARGET);
 			return false;
 		}
-		for (Plot plot : plotSet)
+		if (args[1].equals("+"))
 		{
-			if (plot.contains(pl.getLocation()))
+			for (Plot plot : plotSet)
 			{
-				if (!plot.permitsPlayer(pl.getUniqueId()) && !pl.hasPermission("arcanePlotsPlugin.admin"))
+				if (plot.contains(pl.getLocation()) )
 				{
-					sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
-					return true;
-				}
-				Player target = Bukkit.getPlayer(args[1]);
-				if (target != null)
-				{
-					plot.addPlayer(target.getUniqueId()); // we prefer knowing the UUID here...
-				}
-				else
-				{
-					plot.addPlayer(args[1]); // but we CAN work with a string if they're offline.
-				}
-				sender.sendMessage(Msg.PREFIX + args[1] + Msg.DONE_EDITOR_ADD);
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	private boolean plotUnallow (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
-	{
-		if (args.length < 2)
-		{
-			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TARGET);
-			return false;
-		}
-		for (Plot plot : plotSet)
-		{
-			if (plot.contains(pl.getLocation()))
-			{
-				if (!plot.permitsPlayer(pl.getUniqueId()) && !pl.hasPermission("arcanePlotsPlugin.admin"))
-				{
-					sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
-					return true;
-				}
-				Player target = Bukkit.getPlayer(args[1]);
-				if (target != null)
-				{
-					if (! (plot.removePlayer(target.getUniqueId()) ))
+					if (!plot.permitsPlayer(pl.getUniqueId())
+					&& !pl.hasPermission("arcanePlotsPlugin.admin"))
 					{
-						sender.sendMessage(Msg.PREFIX + Msg.ERR_REMOVE_PLAYER);
-						// note we don't need a "NOT FOUND" here b/c if we can't find them...
-						// we try the block below anyway!
+						sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
 						return true;
 					}
-				}
-				else
-				{
-					if (! (plot.removePlayer(args[1])) )
+					Player target = Bukkit.getPlayer(args[2]);
+					if (target != null)
 					{
-						sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_FOUND);
+						plot.addPlayer(target.getUniqueId()); // we prefer knowing the UUID here...
+					}
+					else
+					{
+						plot.addPlayer(args[1]); // but we CAN work with a string if they're offline.
+					}
+					sender.sendMessage(Msg.PREFIX + args[2] + Msg.DONE_EDITOR_ADD);
+					return true;
+				}
+			}
+			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOT);
+			return true;
+		}
+		else if (args[1].equals("-"))
+		{
+			for (Plot plot : plotSet)
+			{
+				if (plot.contains(pl.getLocation()))
+				{
+					if (!plot.permitsPlayer(pl.getUniqueId())
+					&& !pl.hasPermission("arcanePlotsPlugin.admin"))
+					{
+						sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
 						return true;
 					}
+					Player target = Bukkit.getPlayer(args[2]);
+					if (target != null)
+					{
+						if (! (plot.removePlayer(target.getUniqueId())) )
+						{
+							sender.sendMessage(Msg.PREFIX + Msg.ERR_REMOVE_PLAYER);
+							// note we don't need a "NOT FOUND" here b/c if we can't find them...
+							// we try the block below anyway!
+							return true;
+						}
+					}
+					else
+					{
+						if (! (plot.removePlayer(args[2])) )
+						{
+							sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_FOUND);
+							return true;
+						}
+					}
+					sender.sendMessage(Msg.PREFIX + args[2] + Msg.DONE_EDITOR_REMOVE);
+					return true;
 				}
-				sender.sendMessage(Msg.PREFIX + args[1] + Msg.DONE_EDITOR_REMOVE);
-				return true;
 			}
+			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOT);
+			return true;
 		}
 		return false;
 	}
 	
 	private boolean plotList (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
-		// IMPL you don't need modify rights to see who has them- makes sense, right?
 		if ( (args.length == 2) && (args[1].equals("all")) )
 		{
 			if (pl.hasPermission("arcanePlotsPlugin.console"))
@@ -384,7 +377,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 			sender.sendMessage(Msg.PREFIX + Msg.ERR_ARGS_INVALID);
 			return true;
 		}
-		else // IMPL no argument given, assuming *this* plot
+		else
 		{
 			for (Plot plot : plotSet)
 			{
@@ -446,7 +439,6 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 			sender.sendMessage(Msg.PREFIX + Msg.ERR_ARGS_INVALID);
 			return false;
 		}
-		// IMPL else there's no arg and we assume they mean toggle.
 		for (Plot plot : plotSet)
 		{
 			if (plot.contains(pl.getLocation())
@@ -488,6 +480,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				{
 					if (plot.equals(tempPlots.get(id))) // it's a match! that means remove it.
 					{
+						creditAdd( (Player)sender, plot.getArea()*getRPB() );
 						plotList.remove(tempPlots.get(id));
 						tempPlots.remove(id);
 						sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_REMOVE);
@@ -495,10 +488,20 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 					}
 				}
 				// no match, that means add it to the real list and clear it from the temp.
-				plotList.put(tempPlots.get(id), true);
-				tempPlots.remove(id);
-				sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_SET);
-				return true;
+				if ( creditGet( (Player)sender) >= (tempPlots.get(id).getArea()*getCPB()) )
+				{
+					creditRem( (Player)sender, tempPlots.get(id).getArea()*getCPB() );
+					plotList.put(tempPlots.get(id), true);
+					tempPlots.remove(id);
+					sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_SET);
+					return true;
+				}
+				else // come back when you're a little, mmm... richer.
+				{
+					tempPlots.remove(id);
+					sender.sendMessage(Msg.PREFIX + Msg.ERR_CRED_POOR);
+					return true;
+				}
 			}
 		}
 		sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TEMP);
@@ -522,41 +525,34 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		return true;
 	}
 	
-	// DEPRECATED because subcommands seem to work in plugin.yml
-	@Deprecated
-	private boolean plotHelp (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
+	private boolean creditAdd (Player pl, int amount)
 	{
-		if (args.length == 1)
-		{
-			sender.sendMessage(Msg.PREFIX + Msg.ERR_HELP_ARG);
-			return true;
-		}
-		else if (args.length == 2)
-		{
-			switch (args[1])
-			{
-				case "set":
-					sender.sendMessage(Msg.PREFIX + Msg.PLOT_HELP_SET); break;
-				case "unset":
-					sender.sendMessage(Msg.PREFIX + Msg.PLOT_HELP_UNSET); break;
-				case "allow":
-					sender.sendMessage(Msg.PREFIX + Msg.PLOT_HELP_ALLOW); break;
-				case "unallow":
-					sender.sendMessage(Msg.PREFIX + Msg.PLOT_HELP_UNALLOW); break;
-				case "list":
-					sender.sendMessage(Msg.PREFIX + Msg.PLOT_HELP_LIST); break;
-				case "edit":
-					sender.sendMessage(Msg.PREFIX + Msg.PLOT_HELP_EDIT); break;
-				case "help":
-					sender.sendMessage(Msg.PREFIX + Msg.PLOT_HELP_HELP); break;
-				default: sender.sendMessage(Msg.PREFIX + Msg.ERR_ARG_INVALID);
-			}
-			return true;
-		}
-		return false;
+		// schtuff and things
+		return true;
+	}
+	
+	private boolean creditRem (Player pl, int amount)
+	{
+		// moar stuff
+		return true;
+	}
+	
+	private boolean creditTrans (Player from, Player to, int amount)
+	{
+		boolean success = false;
+		
+		success = creditAdd(to, amount) && creditRem(from, amount);
+		
+		return success;
+	}
+	
+	private int creditGet (Player me)
+	{
+		return Integer.MAX_VALUE; // obviously a placeholder.
 	}
 	
 	// Saving and loading code slightly modified from Tomsik68's SLAPI code on wiki.bukkit.org
+	// {
 	private boolean saveAllPlots ()
 	{
 		try
@@ -573,6 +569,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		}
 		return true;
 	}
+	
 	private boolean loadAllPlots ()
 	{
 		try
@@ -588,6 +585,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		}
 		return true;
 	}
+	// }
 	
 	public boolean wardIsActive (Location loc)
 	{
@@ -602,6 +600,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		return false;
 	}
 	
+	// getters for the config values {
 	public int getRadiusDef ()
 	{
 		return this.getConfig().getInt(RADIUS_DEF);
@@ -621,6 +620,27 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	{
 		return this.getConfig().getBoolean(WARN_MISMATCH);
 	}
+	
+	public int getCPB ()
+	{
+		return this.getConfig().getInt(CREDIT_CPB);
+	}
+	
+	public int getRPB ()
+	{
+		return this.getConfig().getInt(CREDIT_RPB);
+	}
+	
+	public int getWEP ()
+	{
+		return this.getConfig().getInt(CREDIT_WEP);
+	}
+	
+	public int getEPB ()
+	{
+		return this.getConfig().getInt(CREDIT_EPB);
+	}
+	// }
 	
 	@Override
 	public void onEnable ()
@@ -692,23 +712,32 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				}
 			}
 		}
+		
 		@EventHandler
 		public void stopDestruct (BlockDamageEvent e)
-		{
-			if (wardIsActive(e.getBlock().getLocation()) ) 
+		{ 
+			Set <Plot> plotSet = plotList.keySet();
+			for (Plot plot : plotSet)
 			{
-				Set<Plot> plotSet = plotList.keySet();
-				for (Plot plot : plotSet)
+				if (plot.contains(e.getBlock().getLocation()) )
 				{
-					if (plot.contains(e.getBlock().getLocation()) )
+					if (!plotList.get(plot) && plot.permitsPlayer(e.getPlayer().getUniqueId()) )
 					{
-						if (plot.permitsPlayer(e.getPlayer().getUniqueId()) )
-						{
-							// carry on, citizen.
-							return;
-						}
-						else e.setCancelled(true);
-						//getLogger().info("[PlotsPlugin]: block damage prevented");
+						// carry on, citizen.
+						creditAdd(e.getPlayer(), getEPB());
+						return;
+					}
+					else if (plotList.get(plot))
+					{
+						e.getPlayer().sendRawMessage(Msg.PREFIX + Msg.STAT_PLOT_ACTIVE);
+						e.setCancelled(true);
+						return;
+					}
+					else
+					{
+						e.getPlayer().sendRawMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
+						e.setCancelled(true);
+						return;
 					}
 				}
 			}
@@ -716,21 +745,29 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		
 		@EventHandler
 		public void stopConstruct (BlockPlaceEvent e)
-		{
-			if (wardIsActive(e.getBlock().getLocation()) ) 
+		{ 
+			Set <Plot> plotSet = plotList.keySet();
+			for (Plot plot : plotSet)
 			{
-				Set<Plot> plotSet = plotList.keySet();
-				for (Plot plot : plotSet)
+				if (plot.contains(e.getBlock().getLocation()) )
 				{
-					if (plot.contains(e.getBlock().getLocation()) )
+					if (!plotList.get(plot) && plot.permitsPlayer(e.getPlayer().getUniqueId()) )
 					{
-						if (plot.permitsPlayer(e.getPlayer().getUniqueId()) )
-						{
-							// nothing to see here.
-							return;
-						}
-						else e.setCancelled(true);
-						//getLogger().info("[PlotsPlugin]: block placement prevented");
+						// carry on, citizen.
+						creditAdd(e.getPlayer(), getEPB());
+						return;
+					}
+					else if (plotList.get(plot))
+					{
+						e.getPlayer().sendRawMessage(Msg.PREFIX + Msg.STAT_PLOT_ACTIVE);
+						e.setCancelled(true);
+						return;
+					}
+					else
+					{
+						e.getPlayer().sendRawMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
+						e.setCancelled(true);
+						return;
 					}
 				}
 			}

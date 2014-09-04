@@ -1,4 +1,4 @@
-# default config.yml for ArcanePlotsPlugin
+# default config.yml for ArcanePlotsPlugin vRC.3.0
 radius:
   default: 10
   maximum: 100
@@ -12,3 +12,14 @@ file:
 # that is, if a player's name has changed?
 # Note that mismatches are automatically solved either way.
 warn_mismatch: true
+
+# Credits-related values:
+# cpb: cost per block. This is the purchase rate.
+# rpb: refund per block. This is the sell-back rate after the warranty's expired.
+# wed: Warranty expiration period. Time (in seconds) until refunds use rpb (instead of cpb)
+# epb: Earnings per block. Probably should stay at one, unless you want people getting rich quick!
+credit:
+  cpb: 100
+  rpb: 50
+  wep: 0
+  epb: 1

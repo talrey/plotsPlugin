@@ -1,51 +1,47 @@
 name: ArcanePlotsPlugin
-version: RC.2 for 1.7.10
+version: RC.3.0 for 1.7.10
 author: Morios
 description: Protects blocks from being removed / placed in an area.
+#depend: CreditsPlugin
 
 main: plots.ArcanePlotsPlugin
 
 commands:
-  plot set:
-    description: Creates a plot. Defaults to a radius of 10.
-    usage: "/plot set [radius #] / [corners]"
-    aliases: plot create
-    
-  plot unset:
-    description: Removes a plot.
-    usage: "/plot unset"
-    aliases: plot remove
-    
-  plot allow:
-    description: Gives a user editor rights for a plot.
-    usage: "/plot allow <player>"
+  credits:
+    description: View saved credits or give them to someone.
+    usage: "/credits [give <name> #] / blank (defaults to listing your balance)"
 
-  plot unallow:
-    description: Takes a user's editor rights away for a plot.
-    usage: "/plot unallow <player>"
-    aliases: plot block
-  
+  plot buy:
+    description: Purchase a plot. Can create by corners or radius.
+    usage: "/plot buy [radius #] / [corners] / blank (defaults to 'radius')"
+    
+  plot sell:
+    description: Sells a plot back.
+    usage: "/plot sell"
+    
+  plot modify:
+    description: Adds / removes a user from the owner list.
+    usage: "/plot modify [+ <name>] / [- <name>]"
+    
   plot list:
-    description: Lists the editors of a plot.
+    description: Lists who is an owner of this plot. You don't need ownership to use this.
     usage: "/plot list"
     
   plot edit:
     description: Controls the state of a plot's protection.
-    usage: "/plot edit [on / off / blank (to toggle)]"
+    usage: "/plot edit [on] / [off] / blank (to toggle)"
     
-  plot confirm:
+  confirm:
     description: Confirm placing or removing a Plot.
     usage: "/plot confirm"
-    aliases: confirm
     
-  plot cancel:
+  cancel:
     description: Cancel placing or removing a Plot.
     usage: "/plot cancel"
-    aliases: cancel
     
   plot:
-    description: Commands to manipulate a plot. Defaults to 'list'.
-    usage: /plot [option] [arguments]
+    description: Arcane Plots' main command. Defaults to 'plot list'
+    usage: "/plot [command] [options]"
 
 permissions:
   arcanePlotsPlugin.console:

@@ -103,6 +103,11 @@ public final class Plot implements Serializable
 		return new Rectangle(x,z,w,l);
 	}
 	
+	protected int getArea ()
+	{
+		return w*l;
+	}
+	
 	protected boolean contains (Location loc)
 	{
 		if (! (loc.getWorld().getUID().equals(world)) ) return false;
