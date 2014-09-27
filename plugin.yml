@@ -1,8 +1,7 @@
 name: ArcanePlotsPlugin
-version: RC.3.1.2 for 1.7.10
+version: RC.3.1.3 for 1.7.10
 author: Morios
 description: Protects blocks from being removed / placed in an area.
-#depend: CreditsPlugin
 
 main: plots.ArcanePlotsPlugin
 
@@ -45,7 +44,7 @@ commands:
 
 permissions:
   arcanePlotsPlugin.console:
-    description: This allows use of the 'list all' and 'unset all' commands.
+    description: This allows use of the 'list all' command. May fill your chat window, be warned.
     default: false
     
   arcanePlotsPlugin.admin:

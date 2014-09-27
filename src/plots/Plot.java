@@ -2,7 +2,7 @@
  * Plot.java
  * Stores information about where a Plot is, and who can modify it.
  * @author Morios (Mark Talrey)
- * @version RC.2.1 for Minecraft 1.7.10
+ * @version RC.3.1.3 for Minecraft 1.7.10
  */
 
 package plots;

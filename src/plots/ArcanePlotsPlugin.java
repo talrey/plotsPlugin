@@ -2,7 +2,7 @@
  * ArcanePlotsPlugin.java
  * Land-protection plugin for the Arcane Survival server.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.2 for Minecraft 1.7.10
+ * @version RC.3.1.3 for Minecraft 1.7.10
  */
 
 package plots;
@@ -81,7 +81,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				}
 				return true;
 			}
-			if ( (args.length == 3) && (args[0].equals("give")) )
+			if ( (args.length == 3) && ((cmd.getName()+" "+args[0]).equals("credits give")) )
 			{
 				if (Bukkit.getPlayer(args[1]) == null)
 				{
@@ -154,6 +154,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 			else if (args.length == 0)
 			{
 				sender.sendMessage(Msg.PREFIX + Msg.DONE_CRED_BAL + creditGet(pl) );
+				return true;
 			}
 			else
 			{
@@ -256,9 +257,9 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 					return true;
 				}
 			}
-			plotList.put(attempt, true);
+			tempPlots.put(pl.getUniqueId(), attempt);
 			sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_PRICE + (attempt.getArea()*getCPB()) );
-			sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_SET);
+			sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_SET + attempt.listCoords());
 			return true;
 		}
 		return false;
@@ -283,7 +284,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				}
 				tempPlots.put(pl.getUniqueId(), plot);
 				// put in a check for warranty time-out?
-				sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_PRICE + (plot.getArea()*getRPB()) );
+				sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_REFUND + (plot.getArea()*getRPB()) );
 				sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_REM);
 				return true;
 			}
@@ -543,17 +544,27 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	
 	private boolean creditAdd (Player pl, long amount)
 	{
-		bank.put(pl.getUniqueId(), bank.get(pl.getUniqueId())+(long)amount);
-		return true;
+		if (bank.get(pl.getUniqueId()) != null)
+		{
+			bank.put(pl.getUniqueId(), bank.get(pl.getUniqueId()) + amount);
+			return true;
+		}
+		else
+		{
+			bank.put(pl.getUniqueId(), amount);
+			return true;
+		}
 	}
 	
 	private boolean creditRem (Player pl, long amount)
 	{
-		bank.put(pl.getUniqueId(), bank.get(pl.getUniqueId())-(long)amount);
+		if (bank.get(pl.getUniqueId()) == null) return false;
+		
+		bank.put(pl.getUniqueId(), bank.get(pl.getUniqueId()) - amount);
 		return true;
 	}
 	
-	private boolean creditTrans (Player from, Player to, int amount)
+	private boolean creditTrans (Player from, Player to, long amount)
 	{
 		boolean success = false;
 		
