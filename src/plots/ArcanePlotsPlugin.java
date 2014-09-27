@@ -81,6 +81,21 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				}
 				return true;
 			}
+			if ( (args.length == 3) && (args[0].equals("give")) )
+			{
+				if (Bukkit.getPlayer(args[1]) == null)
+				{
+					// I need to find a workaround for this.
+					sender.sendMessage(Msg.PREFIX + Msg.ERR_PLAYER_OFFLINE);
+					return true;
+				}
+				if (creditAdd(Bukkit.getPlayer(args[1]), Integer.parseInt(args[2])) )
+				{
+					sender.sendMessage(Msg.PREFIX + Msg.DONE_CRED_SENT);
+					return true;
+				}
+				return false;
+			}
 			else
 			{
 				sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_PLAYER);
@@ -126,7 +141,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				if (Bukkit.getPlayer(args[1]) == null)
 				{
 					// I need to find a workaround for this.
-					sender.sendMessage(Msg.PREFIX + "recieving player must be online!");
+					sender.sendMessage(Msg.PREFIX + Msg.ERR_PLAYER_OFFLINE);
 					return true;
 				}
 				if (creditTrans(pl, Bukkit.getPlayer(args[1]), Integer.parseInt(args[2])) )

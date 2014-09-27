@@ -5,12 +5,13 @@ Plots plugin developed for the Arcane Survival server.
 
 Author: "Morios" Mark Talrey
 
-Current Version: RC.3.0 for Minecraft 1.7.10
+Current Version: RC.3.1 for Minecraft 1.7.10
 
 Notes:
 - Plot data is saved to "plots.ser" in the main server folder. This is serialized object data created by Java, and may not be human-readable.
+- Credit data is saved to "plotBank.ser" in the main server folder.
 - Currently saves on reload or server stop. I may add timed saves in at a later date.
-- Credits integration is halfway there! It works, but everyone has carte blanche right now, lol.
+- Credits should be working now, there's a bank implemented!
 
 Commands:
 - credits: See your balance or send credits to another player (/credits give <name> #)

@@ -47,6 +47,7 @@ public final class Msg
 	protected static final String ERR_NOT_EDITOR = "You cannot modify this Plot.";
 	protected static final String ERR_NOT_FOUND = "No player was found with that name.";
 	protected static final String ERR_NOT_PLAYER = "You must be a player to use this command.";
+	protected static final String ERR_PLAYER_OFFLINE = "That player is currently offline!";
 	
 	protected static final String ERR_REMOVE_PLAYER = "A Plot requires at least one owner.";
 	protected static final String ERR_NAME_MISMATCH = "A player's stored name was wrong. Corrected.";
