@@ -2,12 +2,10 @@
  * ArcanePlotsPlugin.java
  * Land-protection plugin for the Arcane Survival server.
  * @author Morios (Mark Talrey)
- * @version RC.3.0 for Minecraft 1.7.10
+ * @version RC.3.1 for Minecraft 1.7.10
  */
 
 package plots;
-
-//package com.arcaneminecraft.credits.CreditsPlugin;
 
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
@@ -42,8 +40,10 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	// keys for the config file
 	private static final String RADIUS_DEF = "radius.default";
 	private static final String RADIUS_MAX = "radius.maximum";
-	private static final String FILEPATH = "file.path";
-	private static final String FILENAME = "file.name";
+	private static final String PLOTPATH = "file.plot.path";
+	private static final String PLOTFILE = "file.plot.name";
+	private static final String BANKPATH = "file.bank.path";
+	private static final String BANKFILE = "file.bank.name";
 	private static final String WARN_MISMATCH = "warn_mismatch";
 	private static final String CREDIT_CPB = "credit.cpb";
 	private static final String CREDIT_RPB = "credit.rpb";
@@ -57,7 +57,8 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	// the master list of all loaded plots
 	private HashMap<Plot, Boolean> plotList = new HashMap<>();
 	
-	//private CreditsPlugin creds = Bukkit.getPluginManager().getPlugin("CreditsPlugin");
+	// the list of player credit balances
+	private HashMap<UUID, Long> bank = new HashMap<>();
 	
 	@Override
 	public boolean onCommand (CommandSender sender, Command cmd, String label, String[] args)
@@ -525,15 +526,15 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		return true;
 	}
 	
-	private boolean creditAdd (Player pl, int amount)
+	private boolean creditAdd (Player pl, long amount)
 	{
-		// schtuff and things
+		bank.put(pl.getUniqueId(), bank.get(pl.getUniqueId())+(long)amount);
 		return true;
 	}
 	
-	private boolean creditRem (Player pl, int amount)
+	private boolean creditRem (Player pl, long amount)
 	{
-		// moar stuff
+		bank.put(pl.getUniqueId(), bank.get(pl.getUniqueId())-(long)amount);
 		return true;
 	}
 	
@@ -546,9 +547,9 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		return success;
 	}
 	
-	private int creditGet (Player me)
+	private long creditGet (Player me)
 	{
-		return Integer.MAX_VALUE; // obviously a placeholder.
+		return bank.get(me.getUniqueId());
 	}
 	
 	// Saving and loading code slightly modified from Tomsik68's SLAPI code on wiki.bukkit.org
@@ -557,7 +558,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	{
 		try
 		{
-			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(getDataFile()));
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(getPlotFile()));
 			oos.writeObject(plotList);
 			oos.flush();
 			oos.close();
@@ -574,8 +575,41 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	{
 		try
 		{
-			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(getDataFile()));
+			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(getPlotFile()));
 			plotList.putAll( (HashMap<Plot, Boolean>)ois.readObject());
+			ois.close();
+		}
+		catch (Exception e)
+		{
+			getLogger().info(e.getMessage());
+			return false;
+		}
+		return true;
+	}
+	
+	private boolean saveBank ()
+	{
+		try
+		{
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(getBankFile()));
+			oos.writeObject(bank);
+			oos.flush();
+			oos.close();
+		}
+		catch (Exception e)
+		{
+			getLogger().info(e.getMessage());
+			return false;
+		}
+		return true;
+	}
+	
+	private boolean loadBank ()
+	{
+		try
+		{
+			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(getBankFile()));
+			bank.putAll( (HashMap<UUID, Long>)ois.readObject());
 			ois.close();
 		}
 		catch (Exception e)
@@ -611,9 +645,14 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		return this.getConfig().getInt(RADIUS_MAX);
 	}
 	
-	public String getDataFile ()
+	public String getPlotFile ()
 	{
-		return (this.getConfig().getString(FILEPATH) + this.getConfig().getString(FILENAME) );
+		return (this.getConfig().getString(PLOTPATH) + this.getConfig().getString(PLOTFILE) );
+	}
+	
+	public String getBankFile ()
+	{
+		return (this.getConfig().getString(BANKPATH) + this.getConfig().getString(BANKFILE) );
 	}
 	
 	public boolean shouldWarnMismatch ()
@@ -621,24 +660,24 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		return this.getConfig().getBoolean(WARN_MISMATCH);
 	}
 	
-	public int getCPB ()
+	public long getCPB ()
 	{
-		return this.getConfig().getInt(CREDIT_CPB);
+		return this.getConfig().getLong(CREDIT_CPB);
 	}
 	
-	public int getRPB ()
+	public long getRPB ()
 	{
-		return this.getConfig().getInt(CREDIT_RPB);
+		return this.getConfig().getLong(CREDIT_RPB);
 	}
 	
-	public int getWEP ()
+	public long getWEP ()
 	{
-		return this.getConfig().getInt(CREDIT_WEP);
+		return this.getConfig().getLong(CREDIT_WEP);
 	}
 	
-	public int getEPB ()
+	public long getEPB ()
 	{
-		return this.getConfig().getInt(CREDIT_EPB);
+		return this.getConfig().getLong(CREDIT_EPB);
 	}
 	// }
 	
@@ -646,7 +685,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	public void onEnable ()
 	{
 		getServer().getPluginManager().registerEvents(new PlotsListener(), this);
-		if (! (loadAllPlots()) )
+		if (! (loadAllPlots() && loadBank()) )
 		{
 			getLogger().info(Msg.PREFIX + Msg.ERR_LOAD);
 		}
@@ -654,9 +693,9 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	
 	@Override public void onDisable()
 	{
-		HashMap<Plot, Boolean> plotTest = new HashMap<>();
-		plotTest.putAll(plotList);
-		if (! (saveAllPlots()) )
+		//HashMap<Plot, Boolean> plotTest = new HashMap<>();
+		//plotTest.putAll(plotList);
+		if (! (saveAllPlots() && saveBank()) )
 		{
 			getLogger().info(Msg.PREFIX + Msg.ERR_SAVE);
 		}

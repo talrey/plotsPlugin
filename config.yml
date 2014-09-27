@@ -1,12 +1,16 @@
-# default config.yml for ArcanePlotsPlugin vRC.3.0
+# default config.yml for ArcanePlotsPlugin vRC.3.1
 radius:
   default: 10
   maximum: 100
   
 # where is the plot data saved?
 file:
-  path: "./"
-  name: "plots.ser"
+  plot:
+    path: "./"
+    name: "plots.ser"
+  bank:
+    path: "./"
+    name: "plotBank.ser"
 
 # should a Plot warn the console if a name mismatch is found,
 # that is, if a player's name has changed?
