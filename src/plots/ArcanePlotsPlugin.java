@@ -2,7 +2,7 @@
  * ArcanePlotsPlugin.java
  * Land-protection plugin for the Arcane Survival server.
  * @author Morios (Mark Talrey)
- * @version RC.3.1 for Minecraft 1.7.10
+ * @version RC.3.1.2 for Minecraft 1.7.10
  */
 
 package plots;

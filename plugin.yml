@@ -1,5 +1,5 @@
 name: ArcanePlotsPlugin
-version: RC.3.0 for 1.7.10
+version: RC.3.1.2 for 1.7.10
 author: Morios
 description: Protects blocks from being removed / placed in an area.
 #depend: CreditsPlugin

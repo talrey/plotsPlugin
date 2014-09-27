@@ -3,7 +3,7 @@
  * Static class that stores all the various messages printed to a user.
  * Has no methods to call. Essentially just a message dictionary.
  * @author Morios (Mark Talrey)
- * @version RC.3.0 for Minecraft 1.7.10
+ * @version RC.3.1.2 for Minecraft 1.7.10
  */
 
 package plots;
