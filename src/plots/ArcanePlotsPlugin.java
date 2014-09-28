@@ -2,7 +2,7 @@
  * ArcanePlotsPlugin.java
  * Land-protection plugin for the Arcane Survival server.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.3 for Minecraft 1.7.10
+ * @version RC.3.1.4 for Minecraft 1.7.10
  */
 
 package plots;
@@ -142,6 +142,11 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				{
 					// I need to find a workaround for this.
 					sender.sendMessage(Msg.PREFIX + Msg.ERR_PLAYER_OFFLINE);
+					return true;
+				}
+				if (Integer.parseInt(args[2]) < 0)
+				{
+					sender.sendMessage(Msg.PREFIX + Msg.ERR_CRED_ISNEG);
 					return true;
 				}
 				if (creditTrans(pl, Bukkit.getPlayer(args[1]), Integer.parseInt(args[2])) )
