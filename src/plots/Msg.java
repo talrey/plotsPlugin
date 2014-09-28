@@ -3,7 +3,7 @@
  * Static class that stores all the various messages printed to a user.
  * Has no methods to call. Essentially just a message dictionary.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.3 for Minecraft 1.7.10
+ * @version RC.3.1.4 for Minecraft 1.7.10
  */
 
 package plots;
@@ -62,6 +62,7 @@ public final class Msg
 	
 	protected static final String ERR_CRED_POOR = "sorry, you don't have enough credits.";
 	protected static final String ERR_CRED_REPUBLIC = "No good out here. I need something more real.";
+	protected static final String ERR_CRED_ISNEG = "hey, that's stealing! Use a positive number.";
 	
 	// I/O messages
 	protected static final String ERR_LOAD = "Failed to load plot data!";
