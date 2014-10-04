@@ -2,7 +2,7 @@
  * Plot.java
  * Stores information about where a Plot is, and who can modify it.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.3 for Minecraft 1.7.10
+ * @version RC.3.1.5 for Minecraft 1.7.10
  */
 
 package plots;
@@ -25,6 +25,7 @@ public final class Plot implements Serializable
 {
 	private static final long SerialVersionUID = 1710011L;
 	
+	private UUID owner;
 	private UUID world;
 	private HashMap<UUID, String> allowedPlayers;
 	private int x,z,w,l;
@@ -35,6 +36,7 @@ public final class Plot implements Serializable
 	protected Plot (UUID worldUID, Rectangle bounds, UUID player)
 	{
 		world = worldUID;
+		owner = player;
 		allowedPlayers = new HashMap<>();
 		
 		String plName = Bukkit.getPlayer(player).getName();
@@ -55,6 +57,7 @@ public final class Plot implements Serializable
 	protected Plot (Location loc, int radius, UUID player)
 	{
 		world = loc.getWorld().getUID();
+		owner = player;
 		allowedPlayers = new HashMap<>();
 		
 		String plName = Bukkit.getPlayer(player).getName();
@@ -239,6 +242,11 @@ public final class Plot implements Serializable
 		if ( (allowedPlayers.size() > 2) || (allowedPlayers.get(BLANK) != "") )
 		// 2, because BLANK counts as an allowed player.
 		{
+			if (player.equals(owner))
+			{
+				// can't remove this guy, he's the owner.
+				return false;
+			}
 			allowedPlayers.remove(player);
 			return true;
 		}
@@ -273,6 +281,18 @@ public final class Plot implements Serializable
 				return true;
 			}
 		}
+		return false;
+	}
+	
+	protected int countPlayers ()
+	{
+		return allowedPlayers.size();
+	}
+	
+	protected boolean isOwner (UUID pl)
+	{
+		if (pl.equals(owner)) return true;
+		
 		return false;
 	}
 	

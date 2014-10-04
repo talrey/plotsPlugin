@@ -2,7 +2,7 @@
  * ArcanePlotsPlugin.java
  * Land-protection plugin for the Arcane Survival server.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.4 for Minecraft 1.7.10
+ * @version RC.3.1.5 for Minecraft 1.7.10
  */
 
 package plots;
@@ -50,9 +50,10 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	private static final String CREDIT_WEP = "credit.wep";
 	private static final String CREDIT_EPB = "credit.epb";
 	
-	// temporary data holders for Plot-building
+	// temporary data holders for Plot-building etc
 	private HashMap<String, Location> playerSelections = new HashMap<>();
 	private HashMap<UUID, Plot> tempPlots = new HashMap<>();
+	private HashMap<UUID, String> transfers = new HashMap<>();
 	
 	// the master list of all loaded plots
 	private HashMap<Plot, Boolean> plotList = new HashMap<>();
@@ -114,6 +115,11 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 			pl.performCommand("plot cancel");
 			return true;
 		}
+		else if (cmd.getName().equals("cr"))
+		{
+			pl.performCommand("credits " + listArrayNoDecor(args));
+			return true;
+		}
 		else if (cmd.getName().equals("plot"))
 		{	
 			if (args.length == 0)
@@ -125,12 +131,14 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 			{
 				case "buy": return plotSet(args, sender, plotSet, pl);
 				case "sell": return plotUnset(args, sender, plotSet, pl);
-				case "modify": return plotModify(args, sender, plotSet, pl);
+				case "add": return plotAdd(args, sender, plotSet, pl);
+				case "remove": return plotRem(args, sender, plotSet, pl);
 				case "list": return plotList(args, sender, plotSet, pl);
-				case "edit": return plotEdit(args, sender, plotSet, pl);
+				//case "edit": return plotEdit(args, sender, plotSet, pl); // self-grief locking disabled
 				case "confirm": return plotConfirm(args, sender, plotSet, pl);
 				case "cancel": return plotCancel(args, sender, plotSet, pl);
 	/*DEBUG*/	case "test": return testFunction(args, sender, plotSet, pl);
+				case "help": return plotHelp(args, sender, plotSet, pl);
 				default: sender.sendMessage(Msg.PREFIX + Msg.ERR_ARG_INVALID);
 			}
 		}
@@ -146,24 +154,30 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				}
 				if (Integer.parseInt(args[2]) < 0)
 				{
-					sender.sendMessage(Msg.PREFIX + Msg.ERR_CRED_ISNEG);
+					sender.sendMessage(Msg.CRPREF + Msg.ERR_CRED_ISNEG);
 					return true;
 				}
-				if (creditTrans(pl, Bukkit.getPlayer(args[1]), Integer.parseInt(args[2])) )
+				if (Integer.parseInt(args[2]) > creditGet(pl))
 				{
-					sender.sendMessage(Msg.PREFIX + Msg.DONE_CRED_SENT);
+					sender.sendMessage(Msg.CRPREF + Msg.ERR_CRED_POOR);
 					return true;
 				}
-				return false;
+				transfers.put(pl.getUniqueId(), args[1] + " " + args[2]);
+				
+				sender.sendMessage(
+					Msg.CRPREF + Msg.STAT_CRED_TRANS + Integer.parseInt(args[2])
+					+ Msg.STAT_CRED_TRAN2 + args[1] + Msg.STAT_CRED_TRAN3
+				);
+				return true;
 			}
 			else if (args.length == 0)
 			{
-				sender.sendMessage(Msg.PREFIX + Msg.DONE_CRED_BAL + creditGet(pl) );
+				sender.sendMessage(Msg.CRPREF + Msg.DONE_CRED_BAL + creditGet(pl) );
 				return true;
 			}
 			else
 			{
-				sender.sendMessage(Msg.PREFIX + Msg.ERR_ARGS_INVALID);
+				sender.sendMessage(Msg.CRPREF + Msg.ERR_ARGS_INVALID);
 				return false;
 			}
 		}
@@ -172,7 +186,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	
 	private boolean testFunction (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
-		sender.sendMessage("Fun fact! The maximum area of a plot is ~" + (Integer.MAX_VALUE/getCPB()) );
+		sender.sendMessage("Credits earned per Block: " + getEPB() );
 		return true;
 	}
 	
@@ -196,7 +210,9 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 			}
 			tempPlots.put(pl.getUniqueId(), attempt);
 			sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_PRICE + (attempt.getArea()*getCPB()) );
-			sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_SET + attempt.listCoords());
+			sender.sendMessage(
+				Msg.PREFIX + Msg.STAT_PLOT_SET + attempt.listCoords() + Msg.STAT_PLOT_CANCEL
+			);
 			return true;
 		}
 		else if ( (args.length == 2) && (args[1].equals("corners")) )
@@ -264,7 +280,9 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 			}
 			tempPlots.put(pl.getUniqueId(), attempt);
 			sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_PRICE + (attempt.getArea()*getCPB()) );
-			sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_SET + attempt.listCoords());
+			sender.sendMessage(
+				Msg.PREFIX + Msg.STAT_PLOT_SET + attempt.listCoords() + Msg.STAT_PLOT_CANCEL
+			);
 			return true;
 		}
 		return false;
@@ -290,7 +308,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				tempPlots.put(pl.getUniqueId(), plot);
 				// put in a check for warranty time-out?
 				sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_REFUND + (plot.getArea()*getRPB()) );
-				sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_REM);
+				sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_REM + Msg.STAT_PLOT_CANCEL);
 				return true;
 			}
 		}
@@ -298,80 +316,87 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		return true;
 	}
 	
-	private boolean plotModify (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
+	private boolean plotAdd (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
-		if (args.length < 3)
+		if (args.length < 1)
 		{
 			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TARGET);
 			return false;
 		}
-		if (args[1].equals("+"))
+		for (Plot plot : plotSet)
 		{
-			for (Plot plot : plotSet)
+			if (plot.contains(pl.getLocation()) )
 			{
-				if (plot.contains(pl.getLocation()) )
+				if (!plot.permitsPlayer(pl.getUniqueId())
+				&& !pl.hasPermission("arcanePlotsPlugin.admin"))
 				{
-					if (!plot.permitsPlayer(pl.getUniqueId())
-					&& !pl.hasPermission("arcanePlotsPlugin.admin"))
-					{
-						sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
-						return true;
-					}
-					Player target = Bukkit.getPlayer(args[2]);
-					if (target != null)
-					{
-						plot.addPlayer(target.getUniqueId()); // we prefer knowing the UUID here...
-					}
-					else
-					{
-						plot.addPlayer(args[1]); // but we CAN work with a string if they're offline.
-					}
-					sender.sendMessage(Msg.PREFIX + args[2] + Msg.DONE_EDITOR_ADD);
+					sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
 					return true;
 				}
-			}
-			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOT);
-			return true;
-		}
-		else if (args[1].equals("-"))
-		{
-			for (Plot plot : plotSet)
-			{
-				if (plot.contains(pl.getLocation()))
+				Player target = Bukkit.getPlayer(args[1]);
+				if (target != null)
 				{
-					if (!plot.permitsPlayer(pl.getUniqueId())
-					&& !pl.hasPermission("arcanePlotsPlugin.admin"))
-					{
-						sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
-						return true;
-					}
-					Player target = Bukkit.getPlayer(args[2]);
-					if (target != null)
-					{
-						if (! (plot.removePlayer(target.getUniqueId())) )
-						{
-							sender.sendMessage(Msg.PREFIX + Msg.ERR_REMOVE_PLAYER);
-							// note we don't need a "NOT FOUND" here b/c if we can't find them...
-							// we try the block below anyway!
-							return true;
-						}
-					}
-					else
-					{
-						if (! (plot.removePlayer(args[2])) )
-						{
-							sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_FOUND);
-							return true;
-						}
-					}
-					sender.sendMessage(Msg.PREFIX + args[2] + Msg.DONE_EDITOR_REMOVE);
+					plot.addPlayer(target.getUniqueId()); // we prefer knowing the UUID here...
+				}
+				else
+				{
+					plot.addPlayer(args[1]); // but we CAN work with a string if they're offline.
+				}
+				sender.sendMessage(Msg.PREFIX + args[1] + Msg.DONE_EDITOR_ADD);
+				return true;
+			}
+		}
+		sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOT);
+		return true;
+	}
+	
+	private boolean plotRem (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
+	{
+		if (args.length < 1)
+		{
+			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TARGET);
+			return false;
+		}
+		for (Plot plot : plotSet)
+		{
+			if (plot.contains(pl.getLocation()))
+			{
+				if (!plot.permitsPlayer(pl.getUniqueId())
+				&& !pl.hasPermission("arcanePlotsPlugin.admin"))
+				{
+					sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_EDITOR);
 					return true;
 				}
+				Player target = Bukkit.getPlayer(args[1]);
+				if (target != null)
+				{
+					if (! (plot.removePlayer(target.getUniqueId())) )
+					{
+						if (plot.isOwner(target.getUniqueId()))
+						{
+							sender.sendMessage(Msg.PREFIX + Msg.ERR_REMOVE_OWNER);
+							return true;
+						}
+						sender.sendMessage(Msg.PREFIX + Msg.ERR_REMOVE_PLAYER);
+						// note we don't need a "NOT FOUND" here b/c if we can't find them...
+						// we try the block below anyway!
+						return true;
+					}
+				}
+				else
+				{
+					if (! (plot.removePlayer(args[1])) )
+					{
+						sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_FOUND);
+						return true;
+					}
+				}
+				sender.sendMessage(Msg.PREFIX + args[1] + Msg.DONE_EDITOR_REMOVE);
+				return true;
 			}
-			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOT);
-			return true;
 		}
-		return false;
+		sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOT);
+		return true;
 	}
 	
 	private boolean plotList (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
@@ -413,7 +438,8 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOT);
 		return true;
 	}
-	
+	/*
+	// locks even owners from modifying when active. Deemed a superfluous feature.
 	private boolean plotEdit (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
 		if ( (args.length == 2) && (args[1].equals("on")) )
@@ -423,7 +449,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				if (plot.contains(pl.getLocation())
 				&& (plot.permitsPlayer(pl.getUniqueId()) || pl.hasPermission("arcanePlotsPlugin.admin")) )
 				{
-					plotList.put(plot, true);
+					plotList.put(plot, false);
 					sender.sendMessage(Msg.PREFIX + Msg.DONE_EDIT_ON);
 					return true;
 				}
@@ -474,7 +500,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				}
 				else
 				{
-					plotList.put(plot, true);
+					plotList.put(plot, false);
 					sender.sendMessage(Msg.PREFIX + Msg.DONE_EDIT_ON);
 					return true;
 				}
@@ -489,10 +515,12 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOT);
 		return true;
 	}
+	*/
 	
 	private boolean plotConfirm (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
 		Set<UUID> affirmSet = tempPlots.keySet();
+		Set<UUID> transferSet = transfers.keySet();
 		
 		for (UUID id : affirmSet)
 		{
@@ -513,7 +541,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				if ( creditGet( (Player)sender) >= (tempPlots.get(id).getArea()*getCPB()) )
 				{
 					creditRem( (Player)sender, tempPlots.get(id).getArea()*getCPB() );
-					plotList.put(tempPlots.get(id), true);
+					plotList.put(tempPlots.get(id), false);
 					tempPlots.remove(id);
 					sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_SET);
 					return true;
@@ -526,6 +554,21 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				}
 			}
 		}
+		for (UUID id : transferSet)
+		{
+			if (pl.getUniqueId().equals(id))
+			{
+				Player him = Bukkit.getPlayer((transfers.get(id).split(" "))[0]);
+				int amount = Integer.parseInt( (transfers.get(id).split(" "))[1]);
+				
+				if (creditTrans(pl, him, amount))
+				{
+					sender.sendMessage(Msg.CRPREF + Msg.DONE_CRED_SENT);
+					return true;
+				}
+			}
+		}
+				
 		sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TEMP);
 		return true;
 	}
@@ -533,6 +576,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	private boolean plotCancel (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
 		Set<UUID> affirmSet = tempPlots.keySet();
+		Set<UUID> transferSet = transfers.keySet();
 		
 		for (UUID id : affirmSet)
 		{
@@ -543,7 +587,41 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				return true;
 			}
 		}
+		for (UUID id : transferSet)
+		{
+			if (pl.getUniqueId().equals(id))
+			{
+				Player him = Bukkit.getPlayer((transfers.get(id).split(" "))[0]);
+				int amount = Integer.parseInt( (transfers.get(id).split(" "))[1]);
+				
+				if (him.equals(pl))
+				{
+					sender.sendMessage(Msg.CRPREF + Msg.ERR_CRED_SELF);
+					return true;
+				}
+				if (creditTrans(pl, him, amount))
+				{
+					sender.sendMessage(Msg.CRPREF + Msg.DONE_CRED_SENT);
+					return true;
+				}
+			}
+		}
 		sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TEMP);
+		return true;
+	}
+	
+	private boolean plotHelp (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
+	{
+		sender.sendMessage(Msg.PREFIX + Msg.HELP_PLOT);
+		sender.sendMessage(Msg.FORMAT + Msg.HELP_BUY);
+		sender.sendMessage(Msg.FORMAT + Msg.HELP_SELL);
+		sender.sendMessage(Msg.FORMAT + Msg.HELP_ADD);
+		sender.sendMessage(Msg.FORMAT + Msg.HELP_REM);
+		sender.sendMessage(Msg.FORMAT + Msg.HELP_LIST);
+		sender.sendMessage(Msg.FORMAT + Msg.HELP_YES);
+		sender.sendMessage(Msg.FORMAT + Msg.HELP_NO);
+		sender.sendMessage(Msg.FORMAT + Msg.HELP_CRED);
+		sender.sendMessage(Msg.FORMAT + Msg.HELP_TRAN);
 		return true;
 	}
 	
@@ -580,6 +658,8 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	
 	private long creditGet (Player me)
 	{
+		if (bank.get(me.getUniqueId()) == null) return 0L;
+		
 		return bank.get(me.getUniqueId());
 	}
 	
@@ -712,13 +792,23 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	}
 	// }
 	
+	private String listArrayNoDecor (String[] array)
+	{
+		StringBuilder ret = new StringBuilder();
+		for (int i=0; i< array.length; i++)
+		{
+			ret.append(array[i]+" ");
+		}
+		return ret.toString();
+	}
+	
 	@Override
 	public void onEnable ()
 	{
 		getServer().getPluginManager().registerEvents(new PlotsListener(), this);
 		if (! (loadAllPlots() && loadBank()) )
 		{
-			getLogger().info(Msg.PREFIX + Msg.ERR_LOAD);
+			getLogger().info(Msg.ERR_LOAD);
 		}
 	}
 	
@@ -728,7 +818,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		//plotTest.putAll(plotList);
 		if (! (saveAllPlots() && saveBank()) )
 		{
-			getLogger().info(Msg.PREFIX + Msg.ERR_SAVE);
+			getLogger().info(Msg.ERR_SAVE);
 		}
 	}
 	
@@ -737,13 +827,13 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		@EventHandler
 		public void detectSelection (PlayerInteractEvent e)
 		{
+			if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
+			
 			Set<String> players = playerSelections.keySet();
 			for (String name : players)
 			{
 				if (e.getPlayer().getName() == name) // if you ain't on the list, you ain't in the club.
 				{
-					if (e.getAction() != Action.LEFT_CLICK_BLOCK) return;
-					
 					Set<Plot> plotSet = plotList.keySet();
 					for (Plot plot : plotSet)
 					{
@@ -775,7 +865,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 								return;
 							}
 						}
-						plotList.put(attempt, true);
+						plotList.put(attempt, false);
 						playerSelections.remove(name);
 						e.getPlayer().sendMessage(Msg.PREFIX + Msg.DONE_PLOT_SET);
 					}

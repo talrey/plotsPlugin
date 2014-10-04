@@ -1,5 +1,5 @@
 name: ArcanePlotsPlugin
-version: RC.3.1.3 for 1.7.10
+version: RC.3.1.5 for 1.7.10
 author: Morios
 description: Protects blocks from being removed / placed in an area.
 
@@ -8,7 +8,7 @@ main: plots.ArcanePlotsPlugin
 commands:
   credits:
     description: View saved credits or give them to someone.
-    usage: "/credits [give <name> #] / blank (defaults to listing your balance)"
+    usage: "/credits [give <name> # | <blank>] (defaults to listing your balance)"
 
   plot buy:
     description: Purchase a plot. Can create by corners or radius.
@@ -18,17 +18,21 @@ commands:
     description: Sells a plot back.
     usage: "/plot sell"
     
-  plot modify:
-    description: Adds / removes a user from the owner list.
-    usage: "/plot modify [+ <name>] / [- <name>]"
+  plot add:
+    description: adds a user to the owner list.
+    usage: "/plot add <name>"
+    
+  plot remove:
+    description: removes a user from the owner list.
+    usage: "/plot remove <name>"
     
   plot list:
     description: Lists who is an owner of this plot. You don't need ownership to use this.
     usage: "/plot list"
     
-  plot edit:
-    description: Controls the state of a plot's protection.
-    usage: "/plot edit [on] / [off] / blank (to toggle)"
+  plot help:
+    description: ...see a list of all commands for /plot and /credits.
+    usage: "Really?"
     
   confirm:
     description: Confirm placing or removing a Plot.
@@ -41,6 +45,10 @@ commands:
   plot:
     description: Arcane Plots' main command. Defaults to 'plot list'
     usage: "/plot [command] [options]"
+    
+  cr:
+    description: Shortened form of /credits.
+    usage: "/cr [give <name #> | <blank>]"
 
 permissions:
   arcanePlotsPlugin.console:
@@ -48,6 +56,6 @@ permissions:
     default: false
     
   arcanePlotsPlugin.admin:
-    description: This allows use of plot commands without being on their edit list.
+    description: This allows use of plot commands without being on their editor list.
     default: op
 
