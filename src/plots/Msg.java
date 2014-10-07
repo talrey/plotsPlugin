@@ -3,7 +3,7 @@
  * Static class that stores all the various messages printed to a user.
  * Has no methods to call. Essentially just a message dictionary.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.5 for Minecraft 1.7.10
+ * @version RC.3.1.6 for Minecraft 1.7.10
  */
 
 package plots;
@@ -25,10 +25,13 @@ public final class Msg
 	protected static final String ERR_NO_PLOTS = "There are no plots at all.";
 	protected static final String ERR_NO_TARGET = "Specify a player for this command.";
 	protected static final String ERR_NO_TEMP = "You have no action waiting to be confirmed or cancelled.";
+	protected static final String ERR_NO_NAME = "This plot has no name.";
 	
 	protected static final String ERR_NOT_EDITOR = "You cannot modify this Plot.";
 	protected static final String ERR_NOT_FOUND = "No player was found with that name.";
+	protected static final String ERR_NOT_OWNER = "Only the owner can do that.";
 	protected static final String ERR_NOT_PLAYER = "You must be a player to use this command.";
+	
 	protected static final String ERR_PLAYER_OFFLINE = "That player is currently offline!";
 	
 	protected static final String ERR_REMOVE_PLAYER = "A Plot requires at least one editor.";
@@ -56,6 +59,8 @@ public final class Msg
 	protected static final String DONE_PLOT_SET = "Plot created.";
 	protected static final String DONE_PLOT_REMOVE = "Plot removed.";
 	protected static final String DONE_PLOT_CANCEL = "Plot action cancelled.";
+	protected static final String DONE_PLOT_RENAME = "Plot name is now \"";
+	protected static final String DONE_PLOT_UNNAME = "This plot's name has been deleted.";
 	
 	protected static final String DONE_EDITOR_ADD = /* playername */" can now edit this Plot.";
 	protected static final String DONE_EDITOR_REMOVE = /* playername */" can no longer edit this Plot.";
@@ -77,6 +82,8 @@ public final class Msg
 	protected static final String STAT_PLOT_REM = "Please type /confirm to sell the Plot here.";
 	protected static final String STAT_PLOT_CANCEL = " or type /cancel to abort."; // use after above.
 	protected static final String STAT_PLOT_ACTIVE = "This plot is active and cannot be edited.";
+	protected static final String STAT_PLOT_NAME = "You are standing in \""; /* name */ // + "
+	protected static final String STAT_PLOT_RENAME = "Plot's previous name was \"";
 
 	protected static final String STAT_CRED_TRANS = "Transferring "; /* credits */
 	protected static final String STAT_CRED_TRAN2 = " credits to "; /* name */
@@ -90,6 +97,7 @@ public final class Msg
 	protected static final String HELP_PLOT ="plot: Arcane Plots' main command. Defaults to 'plot list'.";
 	protected static final String HELP_BUY = "  buy: create a plot. Options are [corners | radius #]";
 	protected static final String HELP_SELL ="  sell: delete a plot. You must be the owner.";
+	protected static final String HELP_NAME ="  name: rename a plot. Displays the current name if blank.";
 	protected static final String HELP_ADD = "  add: add a player to the editors list.";
 	protected static final String HELP_REM = "  remove: take a player off the editors list.";
 	protected static final String HELP_LIST ="  list: check the editor list. Must be in a plot.";
