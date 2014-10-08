@@ -2,7 +2,7 @@
  * Plot.java
  * Stores information about where a Plot is, and who can modify it.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.6 for Minecraft 1.7.10
+ * @version RC.3.1.7 for Minecraft 1.7.10
  */
 
 package plots;
@@ -299,7 +299,7 @@ public final class Plot implements Serializable
 	protected String listPlayers (String name)
 	{
 		StringBuilder sb = new StringBuilder();
-		if (name.equals(null))
+		if (name == null)
 		{
 			sb.append(listCoords() + ": ");
 		}
@@ -330,7 +330,14 @@ public final class Plot implements Serializable
 			}
 			else
 			{
-				sb.append(Bukkit.getPlayer(id).getName());
+				if (id.equals(owner))
+				{
+					sb.append(Msg.OWNER + Bukkit.getPlayer(id).getName() + Msg.FORMAT);
+				}
+				else
+				{
+					sb.append(Bukkit.getPlayer(id).getName());
+				}
 				sb.append(", ");
 			}
 		}

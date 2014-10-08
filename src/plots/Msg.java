@@ -3,7 +3,7 @@
  * Static class that stores all the various messages printed to a user.
  * Has no methods to call. Essentially just a message dictionary.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.6 for Minecraft 1.7.10
+ * @version RC.3.1.7 for Minecraft 1.7.10
  */
 
 package plots;
@@ -14,6 +14,8 @@ public final class Msg
 	protected static final String CRFORM = "§d§r";
 	protected static final String PREFIX = FORMAT + "[ArcanePlots]: ";
 	protected static final String CRPREF = CRFORM + "";
+	
+	protected static final String OWNER = "§d§r";
 	
 	// error messages
 	protected static final String ERR_ARG_MISSING = "This command requires an argument.";

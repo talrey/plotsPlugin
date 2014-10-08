@@ -1,60 +1,68 @@
 name: ArcanePlotsPlugin
-version: RC.3.1.5 for 1.7.10
+version: RC.3.1.7 for 1.7.10
 author: Morios
 description: Protects blocks from being removed / placed in an area.
 
 main: plots.ArcanePlotsPlugin
 
 commands:
+  credits give:
+    description: Transfer credits to another player.
+    usage: "/credits give <player> <#>"
+
   credits:
     description: View saved credits or give them to someone.
-    usage: "/credits [give <name> # | <blank>] (defaults to listing your balance)"
+    usage: "/credits [give <name> <#> | <blank>] (defaults to listing your balance)"
 
   plot buy:
     description: Purchase a plot. Can create by corners or radius.
-    usage: "/plot buy [radius #] / [corners] / blank (defaults to 'radius')"
-    
+    usage: "/plot buy [radius <#>] / [corners] / blank (defaults to 'radius')"
+
   plot sell:
     description: Sells a plot back.
     usage: "/plot sell"
-    
+
   plot add:
     description: adds a user to the owner list.
     usage: "/plot add <name>"
-    
+
   plot remove:
     description: removes a user from the owner list.
     usage: "/plot remove <name>"
-    
+
+  plot name:
+    description: "Add or delete the name of your plot. Use &quot; &quot; to clear the name."
+    usage: "/plot name <words or phrase>"
+
   plot list:
-    description: Lists who is an owner of this plot. You don't need ownership to use this.
+    description: Lists who is an editor of this plot. You don't need ownership to use this.
     usage: "/plot list"
-    
+
   plot help:
     description: ...see a list of all commands for /plot and /credits.
     usage: "Really?"
-    
+
   confirm:
     description: Confirm placing or removing a Plot.
     usage: "/plot confirm"
-    
+
   cancel:
     description: Cancel placing or removing a Plot.
     usage: "/plot cancel"
-    
+
   plot:
     description: Arcane Plots' main command. Defaults to 'plot list'
     usage: "/plot [command] [options]"
-    
+
   cr:
     description: Shortened form of /credits.
-    usage: "/cr [give <name #> | <blank>]"
+    usage: "/cr [give <name> <#> | <blank>]"
 
 permissions:
   arcanePlotsPlugin.console:
-    description: This allows use of the 'list all' command. May fill your chat window, be warned.
+    description: "This allows use of the 'list all' command. May fill your chat window, be warned."
     default: false
-    
+
   arcanePlotsPlugin.admin:
     description: This allows use of plot commands without being on their editor list.
     default: op

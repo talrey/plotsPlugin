@@ -2,7 +2,7 @@
  * ArcanePlotsPlugin.java
  * Land-protection plugin for the Arcane Survival server.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.6 for Minecraft 1.7.10
+ * @version RC.3.1.7 for Minecraft 1.7.10
  */
 
 package plots;
@@ -380,7 +380,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	
 	private boolean plotAdd (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
-		if (args.length < 1)
+		if ( (args.length < 2) || (args[1].isEmpty()) )
 		{
 			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TARGET);
 			return false;
@@ -414,7 +414,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	
 	private boolean plotRem (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
-		if (args.length < 1)
+		if ( (args.length < 2) || (args[1].isEmpty()) )
 		{
 			sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TARGET);
 			return false;
@@ -507,6 +507,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 					{
 						sender.sendMessage(plot.listPlayers(plotList.get(plot)));
 					}
+					return true;
 				}
 			}
 		}
@@ -551,16 +552,25 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				}
 			}
 		}
+		// getting to here means they're doing a credit transfer, not a purchase / sellback
 		for (UUID id : transferSet)
 		{
-			if (pl.getUniqueId().equals(id))
+			if (pl.getUniqueId().equals(id) && (transfers.get(id)!=null) && !transfers.get(id).isEmpty() )
 			{
 				Player him = Bukkit.getPlayer((transfers.get(id).split(" "))[0]);
 				int amount = Integer.parseInt( (transfers.get(id).split(" "))[1]);
 				
+				if (pl.equals(him))
+				{
+					sender.sendMessage(Msg.CRPREF + Msg.ERR_CRED_SELF);
+					transfers.remove(id);
+					return true;
+				}
+				
 				if (creditTrans(pl, him, amount))
 				{
 					sender.sendMessage(Msg.CRPREF + Msg.DONE_CRED_SENT);
+					transfers.remove(id);
 					return true;
 				}
 			}
@@ -577,7 +587,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		
 		for (UUID id : affirmSet)
 		{
-			if (pl.getUniqueId().equals(id))
+			if (pl.getUniqueId().equals(id) && (transfers.get(id)!=null) && !transfers.get(id).isEmpty() )
 			{
 				tempPlots.remove(id);
 				sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_CANCEL);
@@ -586,19 +596,21 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		}
 		for (UUID id : transferSet)
 		{
-			if (pl.getUniqueId().equals(id))
+			if (pl.getUniqueId().equals(id) && (transfers.get(id)!=null) && !transfers.get(id).isEmpty() )
 			{
 				Player him = Bukkit.getPlayer((transfers.get(id).split(" "))[0]);
 				int amount = Integer.parseInt( (transfers.get(id).split(" "))[1]);
 				
-				if (him.equals(pl))
+				if (pl.equals(him))
 				{
 					sender.sendMessage(Msg.CRPREF + Msg.ERR_CRED_SELF);
+					transfers.remove(id);
 					return true;
 				}
 				if (creditTrans(pl, him, amount))
 				{
 					sender.sendMessage(Msg.CRPREF + Msg.DONE_CRED_SENT);
+					transfers.remove(id);
 					return true;
 				}
 			}
@@ -858,7 +870,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 		}
 		
 		@EventHandler
-		public void stopDestruct (BlockDamageEvent e)
+		public void stopDestruct (BlockBreakEvent e)
 		{ 
 			Set <Plot> plotSet = plotList.keySet();
 			for (Plot plot : plotSet)

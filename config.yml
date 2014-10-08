@@ -1,4 +1,4 @@
-# default config.yml for ArcanePlotsPlugin vRC.3.1.5
+# default config.yml for ArcanePlotsPlugin vRC.3.1.7
 radius:
   default: 10
   maximum: 100
@@ -27,3 +27,4 @@ credit:
   rpb: 50
   wep: 0
   epb: 1
+
