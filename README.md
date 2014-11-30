@@ -5,7 +5,7 @@ Plots plugin developed for the Arcane Survival server.
 
 Author: "Morios" Mark Talrey
 
-Current Version: RC.3.1.7 for Minecraft 1.7.10
+Current Version: RC.3.2.0 for Minecraft 1.7.10
 
 Notes:
 - Plot data is saved to "plots.ser" in the main server folder. This is serialized object data created by Java, and may not be human-readable.
@@ -19,7 +19,7 @@ Commands:
 - credits: (alias: /cr) See your balance or send credits to another player (/credits give <name> #)
 - plot: master command for plots. Defaults to 'list' option.
 - plot buy: creates a plot. Can create using corners or a radius. Defaults to radius.
-- plot sell: Removes a plot.
+- plot sell: Sells a plot or deletes it. Selling will leave you as an editor, but not the owner.
 - plot add: Add a user to the editor list.
 - plot remove: remove a user from the editor list.
 - plot name: alter the "friendly" name of this plot. Plots without a name will display their coords.

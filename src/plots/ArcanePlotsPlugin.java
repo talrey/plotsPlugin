@@ -2,7 +2,7 @@
  * ArcanePlotsPlugin.java
  * Land-protection plugin for the Arcane Survival server.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.7 for Minecraft 1.7.10
+ * @version RC.3.2.0 for Minecraft 1.7.10
  */
 
 package plots;
@@ -54,6 +54,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	private HashMap<String, Location> playerSelections = new HashMap<>();
 	private HashMap<UUID, Plot> tempPlots = new HashMap<>();
 	private HashMap<UUID, String> transfers = new HashMap<>();
+	private HashMap<Plot, String> escrow = new HashMap<>();
 	
 	// the master list of all loaded plots
 	private HashMap<Plot, String> plotList = new HashMap<>();
@@ -298,26 +299,69 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	
 	private boolean plotUnset (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
-		if (args.length >= 2)
+		Player buyer;
+		int price;
+		
+		if (args.length > 3)
 		{
 			sender.sendMessage(Msg.PREFIX + Msg.ERR_ARGS_INVALID);
 			return true;
 		}
-	
-		for (Plot plot : plotSet)
+		else if (args.length == 3)
 		{
-			if (plot.contains(pl.getLocation() ))
+			buyer = Bukkit.getPlayer(args[1]);
+			
+			if (buyer == null)
 			{
-				if (!plot.isOwner(pl.getUniqueId()) && !pl.hasPermission("arcanePlotsPlugin.admin"))
+				// they're offline or nonexistent, what do?
+				sender.sendMessage(Msg.PREFIX + Msg.ERR_PLAYER_OFFLINE);
+				return true;
+			}
+			try 
+			{
+				price = Integer.parseInt(args[2]);
+			}
+			catch (NumberFormatException e)
+			{
+				sender.sendMessage(Msg.PREFIX + Msg.ERR_CRED_INVALID);
+				return true;
+			}
+			
+			for (Plot plot : plotSet)
+			{
+				if (plot.contains(pl.getLocation() ))
 				{
-					sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_OWNER);
+					if (!plot.isOwner(pl.getUniqueId()) && !pl.hasPermission("arcanePlotsPlugin.admin"))
+					{
+						sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_OWNER);
+						return true;
+					}
+					escrow.put(plot, pl.getName() + "§_TO_§" + buyer.getName() + "§_FOR_§" + price);
+					sender.sendMessage(
+						Msg.PREFIX + Msg.STAT_PLOT_TRANS + buyer.getName() + " for " + price
+					);
+					sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_REM + Msg.STAT_PLOT_CANCEL);
 					return true;
 				}
-				tempPlots.put(pl.getUniqueId(), plot);
-				// put in a check for warranty time-out?
-				sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_REFUND + (plot.getArea()*getRPB()) );
-				sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_REM + Msg.STAT_PLOT_CANCEL);
-				return true;
+			}
+		}
+		else
+		{
+			for (Plot plot : plotSet)
+			{
+				if (plot.contains(pl.getLocation() ))
+				{
+					if (!plot.isOwner(pl.getUniqueId()) && !pl.hasPermission("arcanePlotsPlugin.admin"))
+					{
+						sender.sendMessage(Msg.PREFIX + Msg.ERR_NOT_OWNER);
+						return true;
+					}
+					tempPlots.put(pl.getUniqueId(), plot);
+					// put in a check for warranty time-out?
+					sender.sendMessage(Msg.PREFIX + Msg.STAT_CRED_REFUND + (plot.getArea()*getRPB()) );
+					sender.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_REM + Msg.STAT_PLOT_CANCEL);
+					return true;
+				}
 			}
 		}
 		sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_PLOT);
@@ -518,21 +562,33 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	private boolean plotConfirm (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
 		Set<UUID> affirmSet = tempPlots.keySet();
-		Set<UUID> transferSet = transfers.keySet();
-		
 		for (UUID id : affirmSet)
 		{
 			if (pl.getUniqueId().equals(id)) // first confirm the player's queued at all
 			{
 				for (Plot plot : plotSet)
 				{
-					if (plot.equals(tempPlots.get(id))) // it's a match! that means remove it.
+					if (plot.equals(tempPlots.get(id))) // it's a match!
 					{
-						creditAdd( (Player)sender, plot.getArea()*getRPB() );
-						plotList.remove(tempPlots.get(id));
-						tempPlots.remove(id);
-						sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_REMOVE);
-						return true;
+						if ( !plot.isOwner(id) ) // it's being transferred, not deleted.
+						{
+							creditTrans(
+								Bukkit.getPlayer(id), Bukkit.getPlayer(plot.getOwner()), plot.getPrice()
+							);
+							plot.setOwner(id);
+							tempPlots.remove(id);
+							sender.sendMessage(Msg.PREFIX + Msg.DONE_OFFER_RECV + plot.listCoords());
+							return true;
+						}
+						else
+						{
+							// remove it!
+							creditAdd( (Player)sender, plot.getArea()*getRPB() );
+							plotList.remove(tempPlots.get(id));
+							tempPlots.remove(id);
+							sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_REMOVE);
+							return true;
+						}
 					}
 				}
 				// no match, that means add it to the real list and clear it from the temp.
@@ -553,6 +609,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 			}
 		}
 		// getting to here means they're doing a credit transfer, not a purchase / sellback
+		Set<UUID> transferSet = transfers.keySet();
 		for (UUID id : transferSet)
 		{
 			if (pl.getUniqueId().equals(id) && (transfers.get(id)!=null) && !transfers.get(id).isEmpty() )
@@ -574,6 +631,30 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 					return true;
 				}
 			}
+		}
+		//getting to here means they're transferring a plot to another player.
+		Set<Plot> escrowSet = escrow.keySet();
+		for (Plot plot : escrowSet)
+		{
+			if ( !(escrow.get(plot).startsWith(pl.getName())) ) continue;
+			
+			String[] order = escrow.get(plot).split("§_.+_§",3);
+			Player seller = Bukkit.getPlayer(order[0]);
+			Player buyer = Bukkit.getPlayer(order[1]);
+			int price = Integer.parseInt(order[2]);
+			
+			plot.setPrice(price);
+			escrow.remove(plot);
+			tempPlots.put(buyer.getUniqueId(), plot);
+			
+			seller.sendMessage(Msg.PREFIX + Msg.DONE_OFFER_SENT);
+			buyer.sendMessage(
+				Msg.PREFIX + 
+				Msg.STAT_PLOT_OFFER + plotList.get(plot) + 
+				Msg.STAT_PLOT_OFFER2 + price
+			);
+			buyer.sendMessage(Msg.PREFIX + Msg.STAT_PLOT_OFFER3);
+			return true;
 		}
 				
 		sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TEMP);
@@ -583,8 +664,6 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 	private boolean plotCancel (String[] args, CommandSender sender, Set<Plot> plotSet, Player pl)
 	{
 		Set<UUID> affirmSet = tempPlots.keySet();
-		Set<UUID> transferSet = transfers.keySet();
-		
 		for (UUID id : affirmSet)
 		{
 			if (pl.getUniqueId().equals(id) && (transfers.get(id)!=null) && !transfers.get(id).isEmpty() )
@@ -594,6 +673,7 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 				return true;
 			}
 		}
+		Set<UUID> transferSet = transfers.keySet();
 		for (UUID id : transferSet)
 		{
 			if (pl.getUniqueId().equals(id) && (transfers.get(id)!=null) && !transfers.get(id).isEmpty() )
@@ -614,6 +694,15 @@ public final class ArcanePlotsPlugin extends JavaPlugin
 					return true;
 				}
 			}
+		}
+		Set<Plot> escrowSet = escrow.keySet();
+		for (Plot plot : escrowSet)
+		{
+			if ( !((escrow.get(plot).split("§_TO_§"))[0].equals(pl.getName())) ) continue;
+			
+			escrow.remove(plot);
+			sender.sendMessage(Msg.PREFIX + Msg.DONE_PLOT_CANCEL);
+			return true;
 		}
 		sender.sendMessage(Msg.PREFIX + Msg.ERR_NO_TEMP);
 		return true;

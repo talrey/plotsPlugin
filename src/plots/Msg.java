@@ -3,7 +3,7 @@
  * Static class that stores all the various messages printed to a user.
  * Has no methods to call. Essentially just a message dictionary.
  * @author Morios (Mark Talrey)
- * @version RC.3.1.7 for Minecraft 1.7.10
+ * @version RC.3.2.0 for Minecraft 1.7.10
  */
 
 package plots;
@@ -52,6 +52,7 @@ public final class Msg
 	protected static final String ERR_CRED_REPUBLIC = "No good out here. I need something more real.";
 	protected static final String ERR_CRED_ISNEG = "hey, that's stealing! Use a positive number.";
 	protected static final String ERR_CRED_SELF = "Sending yourself money won't do anything.";
+	protected static final String ERR_CRED_INVALID = "Price must be an integer value.";
 	
 	// I/O messages
 	protected static final String ERR_LOAD = "Failed to load plot data!";
@@ -63,6 +64,8 @@ public final class Msg
 	protected static final String DONE_PLOT_CANCEL = "Plot action cancelled.";
 	protected static final String DONE_PLOT_RENAME = "Plot name is now \"";
 	protected static final String DONE_PLOT_UNNAME = "This plot's name has been deleted.";
+	protected static final String DONE_OFFER_SENT = "Offer for purchase sent.";
+	protected static final String DONE_OFFER_RECV = "Offer accepted! You now own the plot at: "; /* loc */
 	
 	protected static final String DONE_EDITOR_ADD = /* playername */" can now edit this Plot.";
 	protected static final String DONE_EDITOR_REMOVE = /* playername */" can no longer edit this Plot.";
@@ -86,6 +89,10 @@ public final class Msg
 	protected static final String STAT_PLOT_ACTIVE = "This plot is active and cannot be edited.";
 	protected static final String STAT_PLOT_NAME = "You are standing in \""; /* name */ // + "
 	protected static final String STAT_PLOT_RENAME = "Plot's previous name was \"";
+	protected static final String STAT_PLOT_TRANS = "You are about to sell this plot to"; /* name */
+	protected static final String STAT_PLOT_OFFER = "You have been offered the purchase of "; /* plot */
+	protected static final String STAT_PLOT_OFFER2 = " for the price of: ";
+	protected static final String STAT_PLOT_OFFER3 = "Use /confirm or /cancel to accept or decline.";
 
 	protected static final String STAT_CRED_TRANS = "Transferring "; /* credits */
 	protected static final String STAT_CRED_TRAN2 = " credits to "; /* name */
@@ -98,7 +105,7 @@ public final class Msg
 	// help messages
 	protected static final String HELP_PLOT ="plot: Arcane Plots' main command. Defaults to 'plot list'.";
 	protected static final String HELP_BUY = "  buy: create a plot. Options are [corners | radius #]";
-	protected static final String HELP_SELL ="  sell: delete a plot. You must be the owner.";
+	protected static final String HELP_SELL ="  sell: delete or transfer a plot. You must be the owner.";
 	protected static final String HELP_NAME ="  name: rename a plot. Displays the current name if blank.";
 	protected static final String HELP_ADD = "  add: add a player to the editors list.";
 	protected static final String HELP_REM = "  remove: take a player off the editors list.";

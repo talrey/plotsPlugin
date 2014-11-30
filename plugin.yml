@@ -1,5 +1,5 @@
 name: ArcanePlotsPlugin
-version: RC.3.1.7 for 1.7.10
+version: RC.3.2.0 for 1.7.10
 author: Morios
 description: Protects blocks from being removed / placed in an area.
 
@@ -16,11 +16,11 @@ commands:
 
   plot buy:
     description: Purchase a plot. Can create by corners or radius.
-    usage: "/plot buy [radius <#>] / [corners] / blank (defaults to 'radius')"
+    usage: "/plot buy [radius <#> | corners | blank] (defaults to 'radius')"
 
   plot sell:
-    description: Sells a plot back.
-    usage: "/plot sell"
+    description: Sells a plot or deletes it. Selling will leave you as an editor, but not the owner.
+    usage: "/plot sell [<player> <price> | blank]"
 
   plot add:
     description: adds a user to the owner list.
